@@ -1,3 +1,4 @@
+import AppLayout from "@/components/layouts/AppLayout";
 import { Toaster } from "@/components/ui/toaster";
 import "@/styles/globals.css";
 import { api } from "@/utils/api";
@@ -11,8 +12,10 @@ const MyApp: AppType<{ session: Session | null }> = ({
 }) => {
   return (
     <SessionProvider session={session}>
-      <Component {...pageProps} />
-      <Toaster />
+      <AppLayout logged={!!session}>
+        <Component {...pageProps} />
+        <Toaster />
+      </AppLayout>
     </SessionProvider>
   );
 };
