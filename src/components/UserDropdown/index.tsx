@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Brush, CreditCard, LogOut, Tag, User } from "lucide-react";
+import Link from "next/link";
 
 const menu = [
   {
@@ -42,7 +43,7 @@ const menu = [
       {
         label: "Sair",
         icon: LogOut,
-        href: "/sair",
+        href: "/logout",
       },
     ],
   },
@@ -72,11 +73,13 @@ const UserDropdown = () => {
                   <DropdownMenuSeparator />
                 </>
               )}
-              {items.map(({ label, icon: Icon }) => (
-                <DropdownMenuItem key={label}>
-                  <span className="flex items-center gap-2 text-sm text-zinc-800">
-                    <Icon size={16} /> {label}
-                  </span>
+              {items.map(({ label, icon: Icon, href }) => (
+                <DropdownMenuItem key={label} className="cursor-pointer">
+                  <Link href={href} className="w-full">
+                    <span className="flex items-center gap-2 text-sm text-zinc-800">
+                      <Icon size={16} /> {label}
+                    </span>
+                  </Link>
                 </DropdownMenuItem>
               ))}
               {!lastItem ? <DropdownMenuSeparator /> : null}

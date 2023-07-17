@@ -1,8 +1,13 @@
+import { cn } from "@/utils/cn";
 import { MessagesSquare } from "lucide-react";
 import Link from "next/link";
 
-const SidebarLogo = () => (
-  <Link href="/" className="mb-4 flex pl-4 pb-4">
+type SidebarLogoProps = {
+  className?: string;
+};
+
+const SidebarLogo = ({ className }: SidebarLogoProps) => (
+  <Link href="/" className={cn(`mb-4 flex pb-4 pl-4`, className)}>
     <h1 className="flex items-center gap-3 text-xl tracking-tight transition-colors">
       Bebiss <MessagesSquare size={18} />
     </h1>

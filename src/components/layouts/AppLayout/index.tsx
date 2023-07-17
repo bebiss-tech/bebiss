@@ -1,11 +1,3 @@
-import { Header } from "@/components/Header";
-
-import Feedback from "@/components/Feedback";
-import SearchCommand from "@/components/SearchCommand";
-import { Sidebar } from "@/components/Sidebar";
-import UserDropdown from "@/components/UserDropdown";
-import CompanySwitcher from "@/components/company-switcher";
-import { Toaster } from "@/components/ui/toaster";
 import {
   BriefcaseIcon,
   Calendar,
@@ -17,9 +9,17 @@ import {
   Users2,
 } from "lucide-react";
 import { type Metadata } from "next";
-import { Inter } from "next/font/google";
-import Head from "next/head";
-const inter = Inter({ subsets: ["latin"] });
+
+import Feedback from "@/components/Feedback";
+import { Header } from "@/components/Header";
+import SearchCommand from "@/components/SearchCommand";
+import { Sidebar } from "@/components/Sidebar";
+import UserDropdown from "@/components/UserDropdown";
+import CompanySwitcher from "@/components/company-switcher";
+import Meta from "@/components/layouts/meta";
+import { Toaster } from "@/components/ui/toaster";
+import { useSession } from "next-auth/react";
+import { useEffect } from "react";
 
 export const metadata: Metadata = {
   title: "Bebiss",
@@ -28,63 +28,67 @@ export const metadata: Metadata = {
 const menu = [
   {
     label: "Dashboard",
-    href: "/",
+    href: "/app/",
     icon: Home,
   },
   {
     label: "Agendamentos",
-    href: "/agendamentos",
+    href: "/app/agendamentos",
     icon: Calendar,
   },
   {
     label: "Empresas",
-    href: "/empresas",
+    href: "/app/empresas",
     icon: Store,
   },
   {
     label: "Profissionais",
-    href: "/profissionais",
+    href: "/app/profissionais",
     icon: BriefcaseIcon,
   },
   {
     label: "Serviços",
-    href: "/servicos",
+    href: "/app/servicos",
     icon: PackageIcon,
   },
   {
     label: "Clientes",
-    href: "/Clientes",
+    href: "/app/clientes",
     icon: Users2,
   },
   {
     label: "Templates",
-    href: "/templates",
+    href: "/app/templates",
     icon: MessageSquareDashed,
   },
 ];
 
 type AppLayoutProps = {
   children: React.ReactNode;
-  title?: string;
-  logged?: boolean;
 };
 
-export default function AppLayout({
-  children,
-  title = "Bebiss",
-  logged = true,
-}: AppLayoutProps) {
-  if (!logged) {
-    return <>{children}</>;
+export default function AppLayout({ children }: AppLayoutProps) {
+  const { status, data } = useSession();
+
+  useEffect(() => {
+    if (data?.user) {
+      localStorage.setItem("user", JSON.stringify(data?.user));
+    }
+  }, [data?.user]);
+
+  if (status === "unauthenticated") {
+    return children;
+  }
+
+  if (status === "loading") {
+    return "loading...";
   }
 
   return (
     <>
-      <Head>
-        <title>{title}</title>
-      </Head>
+      <Meta />
 
-      <div className={`${inter.className} h-full`}>
+      <div className="h-full min-h-screen">
         <Sidebar.Root>
           <Sidebar.Logo />
 
@@ -106,7 +110,7 @@ export default function AppLayout({
           </div>
         </Sidebar.Root>
 
-        <div className="relative z-0 mx-auto h-full bg-zinc-50 px-8 pb-8 pt-24 lg:ml-64">
+        <div className="relative z-0 mx-auto h-full min-h-screen bg-zinc-50 px-8 pb-8 pt-24 lg:ml-64">
           <Header.Root>
             <SearchCommand />
 
