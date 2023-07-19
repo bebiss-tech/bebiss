@@ -19,7 +19,7 @@ const Feedback = () => (
     <PopoverContent align="end" className="flex  flex-col items-end gap-2">
       <Textarea
         className="h-32 w-64 resize-none"
-        placeholder="Novas ideias, reporte bugs, melhoreis..."
+        placeholder="Novas ideias, reporte bugs, melhorias..."
       />
       <Button size="sm">Enviar</Button>
     </PopoverContent>

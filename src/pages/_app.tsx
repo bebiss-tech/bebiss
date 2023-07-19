@@ -14,12 +14,10 @@ const MyApp: AppType<{ session: Session | null }> = ({
   pageProps: { session, ...pageProps },
 }) => {
   return (
-    <main className={inter.className}>
+    <main className={`${inter.className} min-h-screen`}>
       <SessionProvider session={session}>
-        <AppLayout>
-          <Component {...pageProps} />
-          <Toaster />
-        </AppLayout>
+        <Component {...pageProps} />
+        <Toaster />
       </SessionProvider>
     </main>
   );

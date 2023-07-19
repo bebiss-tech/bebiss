@@ -1,16 +1,25 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { env } from "@/env.mjs";
+import { prisma } from "@/server/db";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { compare } from "bcryptjs";
 import { type GetServerSidePropsContext } from "next";
 import {
   getServerSession,
-  type NextAuthOptions,
   type DefaultSession,
   type DefaultUser,
+  type NextAuthOptions,
 } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { env } from "@/env.mjs";
-import { prisma } from "@/server/db";
+import { z } from "zod";
 
 type UserRole = "ADMIN_SYSTEM" | "ADMIN_COMPANY" | "PROFESSIONAL";
+
+const loginSchema = z.object({
+  email: z.string().email({ message: "Invalid email." }),
+  password: z.string().nonempty({ message: "Password is required." }),
+});
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -23,7 +32,7 @@ declare module "next-auth" {
     user: {
       id: string;
       // ...other properties
-      role: UserRole;
+      role?: UserRole;
     } & DefaultSession["user"];
   }
 
@@ -53,9 +62,71 @@ export const authOptions: NextAuthOptions = {
           response_type: "code",
         },
       },
+      allowDangerousEmailAccountLinking: true,
+    }),
+    // EmailProvider({
+    //   sendVerificationRequest({ identifier, url }) {
+    //     if (process.env.NODE_ENV === "development") {
+    //       console.log(`Login link: ${url}`);
+    //       return;
+    //     } else {
+    //     void sendEmail({
+    //       email: identifier,
+    //       subject: "Seu link de login do Bebiss",
+    //       react: LoginLink({ url, email: identifier }),
+    //     });
+    //     }
+    //   },
+    // }),
+    CredentialsProvider({
+      id: "credentials",
+      name: "credentials",
+      credentials: {
+        email: {
+          label: "Email",
+          type: "text",
+          placeholder: "alan@bebiss.com.br",
+        },
+        password: { label: "Senha", type: "password" },
+      },
+      authorize: async (credentials) => {
+        try {
+          const { email, password } = loginSchema.parse(credentials);
+
+          const user = await prisma.user.findFirst({
+            where: {
+              email,
+            },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+              password: true,
+            },
+          });
+
+          if (!user) return null;
+
+          const isValidPassword = await compare(password, user.password!);
+
+          if (!isValidPassword) return null;
+
+          return user;
+        } catch (err) {
+          console.log(err);
+          return null;
+        }
+      },
     }),
   ],
   session: { strategy: "jwt" },
+  pages: {
+    signIn: "/auth/sign-in",
+    newUser: "/auth/sign-up",
+    signOut: "/auth/sign-out",
+    error: "/auth/sign-in",
+  },
   cookies: {
     sessionToken: {
       name: `${VERCEL_DEPLOYMENT ? "__Secure-" : ""}next-auth.session-token`,
@@ -70,19 +141,46 @@ export const authOptions: NextAuthOptions = {
     },
   },
   callbacks: {
-    session: ({ session, token }) => ({
-      ...session,
-      token,
-      user: {
-        ...session.user,
-        id: token.sub,
-      },
-    }),
+    session: ({ session, token }) => {
+      return {
+        ...session,
+        token,
+        user: {
+          ...session.user,
+          id: token.sub,
+          // @ts-ignore
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          role: token.user.role,
+        },
+      };
+    },
     jwt({ token, user }) {
       if (user) {
         token.user = user;
       }
       return token;
+    },
+  },
+  events: {
+    async signIn(message) {
+      if (message.isNewUser) {
+        const email = message.user.email as string;
+        const user = await prisma.user.findUnique({
+          where: { email },
+          select: {
+            name: true,
+            createdAt: true,
+          },
+        });
+        // only send the welcome email if the user was created in the last 10s
+        // (this is a workaround because the `isNewUser` flag is triggered when a user does `dangerousEmailAccountLinking`)
+        if (
+          user?.createdAt &&
+          new Date(user.createdAt).getTime() > Date.now() - 10000
+        ) {
+          console.log("Sending welcome email to", email);
+        }
+      }
     },
   },
   // debug: true,

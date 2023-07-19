@@ -67,6 +67,11 @@ model User {
   appointmentId String?      @unique
   appointment   Appointment? @relation(fields: [appointmentId], references: [id])
 
+  onboardings Onboarding[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([companyId])
 }
 
@@ -145,6 +150,9 @@ model Company {
   templates    Template[]
   addressId    String        @unique
   address      Address       @relation(fields: [addressId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Service {
@@ -179,6 +187,8 @@ model Client {
   cpf            String?
   birthday       DateTime?
   gender         Gender?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   appointments Appointment[]
 
@@ -270,4 +280,25 @@ model Template {
   company   Company?     @relation(fields: [companyId], references: [id])
 
   @@index([companyId])
+}
+
+enum Steps {
+  COMPLETE_REGISTRATION
+  WELCOME
+  CALENDAR
+  COMPANY
+  SERVICES
+  CLIENTS
+  APPOINTMENTS
+}
+
+model Onboarding {
+  id          String    @id @default(uuid())
+  step        Steps     @default(WELCOME)
+  userId      String?
+  User        User?     @relation(fields: [userId], references: [id])
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([userId])
 }

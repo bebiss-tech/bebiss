@@ -8,7 +8,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Brush, CreditCard, LogOut, Tag, User } from "lucide-react";
+import { getNameInitials } from "@/utils";
+import { CreditCard, LogOut, MessageCircle, User } from "lucide-react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 
 const menu = [
@@ -18,22 +20,17 @@ const menu = [
       {
         label: "Conta",
         icon: User,
-        href: "/conta",
+        href: "/app/conta",
       },
       {
         label: "Assinatura",
         icon: CreditCard,
-        href: "/assinatura",
+        href: "/app/assinatura",
       },
       {
-        label: "Personalizar",
-        icon: Brush,
-        href: "/personalizar",
-      },
-      {
-        label: "Tags",
-        icon: Tag,
-        href: "/tags",
+        label: "Suporte",
+        icon: MessageCircle,
+        href: "/app/personalizar",
       },
     ],
   },
@@ -43,22 +40,32 @@ const menu = [
       {
         label: "Sair",
         icon: LogOut,
-        href: "/logout",
+        href: "/auth/sign-out",
       },
     ],
   },
 ];
 
 const UserDropdown = () => {
+  const { data } = useSession();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Avatar className="cursor-pointer">
-          <AvatarFallback>AG</AvatarFallback>
-          <AvatarImage src="https://github.com/alangabrielbs.png" />
+          <AvatarFallback>{getNameInitials(data!.user.name!)}</AvatarFallback>
+          <AvatarImage src={data!.user.image!} />
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
+        <div className="p-2">
+          <p className="truncate text-sm font-medium text-gray-900">
+            {data?.user.name}
+          </p>
+          <p className="truncate text-sm text-gray-500">{data?.user.email}</p>
+        </div>
+        <DropdownMenuSeparator />
+
         {menu.map(({ label, items }, index) => {
           const lastItem = index === menu.length - 1;
           return (
