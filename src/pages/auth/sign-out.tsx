@@ -1,8 +1,8 @@
 import { signOut } from "next-auth/react";
-import { useLayoutEffect } from "react";
+import { useEffect } from "react";
 
 const LogoutPage = () => {
-  useLayoutEffect(() => {
+  useEffect(() => {
     void signOut({
       callbackUrl: "/auth/sign-in",
     });
