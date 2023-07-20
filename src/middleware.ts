@@ -33,7 +33,7 @@ const rolesConfig = {
     route: "/app",
   },
   PROFESSIONAL: {
-    route: "/p",
+    route: "/agenda",
   },
 };
 
@@ -48,27 +48,20 @@ export default async function middleware(req: NextRequest) {
   const userRole = session?.user?.role;
   const role = rolesConfig[userRole];
 
-  if (userRole !== "ADMIN_SYSTEM" && path === "/admin") {
+  if (userRole !== "ADMIN_SYSTEM" && path.startsWith("/admin")) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
-  if (userRole !== "ADMIN_COMPANY" && path === "/app") {
+  if (userRole !== "ADMIN_COMPANY" && path.startsWith("/app")) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
-  if (userRole !== "PROFESSIONAL" && path === "/p") {
+  if (userRole !== "PROFESSIONAL" && path.startsWith("/agenda")) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
   if (!session?.email && !AUTH_PATHS.includes(path)) {
-    return NextResponse.redirect(
-      new URL(
-        `/auth/sign-in${
-          path !== "/" ? `?next=${encodeURIComponent(path)}` : ""
-        }`,
-        req.url
-      )
-    );
+    return NextResponse.redirect(new URL(`/auth/sign-in`, req.url));
   }
 
   if (session?.email && AUTH_PATHS.includes(path)) {
@@ -81,6 +74,15 @@ export default async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     "/",
+    /*
+     * Match all paths except for:
+     * 1. /api/ routes
+     * 2. /_next/ (Next.js internals)
+     * 3. /_proxy/ (special page for OG tags proxying)
+     * 4. /_static (inside /public)
+     * 5. /_vercel (Vercel internals)
+     * 6. /favicon.ico, /sitemap.xml, /robots.txt (static files)
+     */
     "/((?!api/|_next/|_proxy/|_static|_vercel|favicon.ico|sitemap.xml).*)",
   ],
 };

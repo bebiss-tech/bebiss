@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getNameInitials } from "@/utils";
 import { CreditCard, LogOut, MessageCircle, User } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 
 const menu = [
@@ -20,27 +20,17 @@ const menu = [
       {
         label: "Conta",
         icon: User,
-        href: "/app/conta",
+        href: "/conta",
       },
       {
         label: "Assinatura",
         icon: CreditCard,
-        href: "/app/assinatura",
+        href: "/assinatura",
       },
       {
         label: "Suporte",
         icon: MessageCircle,
-        href: "/app/personalizar",
-      },
-    ],
-  },
-  {
-    label: "",
-    items: [
-      {
-        label: "Sair",
-        icon: LogOut,
-        href: "/auth/sign-out",
+        href: "/personalizar",
       },
     ],
   },
@@ -48,6 +38,12 @@ const menu = [
 
 const UserDropdown = () => {
   const { data } = useSession();
+
+  const handleSignOut = () => {
+    void signOut({
+      callbackUrl: "/auth/sign-in",
+    });
+  };
 
   return (
     <DropdownMenu>
@@ -67,7 +63,6 @@ const UserDropdown = () => {
         <DropdownMenuSeparator />
 
         {menu.map(({ label, items }, index) => {
-          const lastItem = index === menu.length - 1;
           return (
             <div key={index}>
               {label && (
@@ -89,7 +84,18 @@ const UserDropdown = () => {
                   </Link>
                 </DropdownMenuItem>
               ))}
-              {!lastItem ? <DropdownMenuSeparator /> : null}
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                key={label}
+                className="cursor-pointer"
+                onClick={handleSignOut}
+              >
+                <span className="flex items-center gap-2 text-sm text-zinc-800">
+                  <LogOut size={16} /> Sair
+                </span>
+              </DropdownMenuItem>
             </div>
           );
         })}

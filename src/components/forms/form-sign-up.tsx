@@ -6,12 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/utils/api";
 
-import Google from "@/components/ui/icons/google";
 import { useToast } from "@/components/ui/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { FcGoogle } from "react-icons/fc";
@@ -44,7 +42,6 @@ const FormSignUp = () => {
     resolver: zodResolver(createUserSchema),
   });
   const { toast } = useToast();
-  const router = useRouter();
 
   const { mutate: createUser } = api.users.create.useMutation();
 
@@ -52,15 +49,17 @@ const FormSignUp = () => {
     setIsLoading(true);
 
     createUser(values, {
-      onSuccess() {
+      async onSuccess() {
+        await signIn("credentials", {
+          email: values.email,
+          password: values.password,
+          callbackUrl: "/welcome",
+        });
+
         toast({
           title: `Bem vindo ${values.name}!`,
           description: "Você será redirecionado para realizar login.",
         });
-
-        setTimeout(() => {
-          router.push("/auth/sign-in");
-        }, 2000);
 
         setIsLoading(false);
       },
@@ -85,7 +84,7 @@ const FormSignUp = () => {
           Crie a sua conta aqui
         </h1>
         <p className="text-muted-foreground text-sm">
-          Crie para começar a usar o Bebiss
+          Crie sua conta para começar a usar o Bebiss
         </p>
       </div>
 
@@ -98,9 +97,8 @@ const FormSignUp = () => {
           })
         }
       >
-        {/* <Google className="mr-2 h-4 w-4" /> */}
         <FcGoogle className="mr-2 h-5 w-5" />
-        Fazer login com o Google
+        Criar conta com o Google
       </Button>
 
       <div className="relative">

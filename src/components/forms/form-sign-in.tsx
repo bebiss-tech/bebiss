@@ -49,13 +49,8 @@ const FormSignIn = () => {
     try {
       const response = await signIn("credentials", {
         ...values,
-        redirect: false,
+        callbackUrl: "/",
       });
-
-      if (response?.ok) {
-        router.push("/");
-        return;
-      }
 
       if (response?.error) {
         throw new Error("Usuário ou senha inválidos.");
@@ -102,7 +97,7 @@ const FormSignIn = () => {
         disabled={isLoading}
         onClick={() =>
           void signIn("google", {
-            callbackUrl: "/app",
+            callbackUrl: "/",
           })
         }
       >

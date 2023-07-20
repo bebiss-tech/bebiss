@@ -20,9 +20,11 @@ export default function Home() {
             com nosso Sistema de Confirmação e Gestão de Agendamentos.
           </p>
           <div className="mt-8 flex items-center justify-center gap-3">
-            <Button>
-              <span>Começar agora</span>
-            </Button>
+            <Link href="/auth/sign-up">
+              <Button>
+                <span>Começar agora</span>
+              </Button>
+            </Link>
             <Link href="/auth/sign-in">
               <Button variant="link">
                 <span>Fazer login</span>

@@ -123,9 +123,7 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   pages: {
     signIn: "/auth/sign-in",
-    newUser: "/auth/sign-up",
     signOut: "/auth/sign-out",
-    error: "/auth/sign-in",
   },
   cookies: {
     sessionToken: {
