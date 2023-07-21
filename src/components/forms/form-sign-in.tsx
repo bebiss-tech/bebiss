@@ -49,8 +49,13 @@ const FormSignIn = () => {
     try {
       const response = await signIn("credentials", {
         ...values,
+        redirect: false,
         callbackUrl: "/",
       });
+
+      if (response?.ok) {
+        router.push("/");
+      }
 
       if (response?.error) {
         throw new Error("Usuário ou senha inválidos.");

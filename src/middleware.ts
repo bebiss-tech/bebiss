@@ -48,6 +48,14 @@ export default async function middleware(req: NextRequest) {
   const userRole = session?.user?.role;
   const role = rolesConfig[userRole];
 
+  if (
+    session?.user?.createdAt &&
+    new Date(session?.user?.createdAt).getTime() > Date.now() - 10000 &&
+    path !== "/app/welcome"
+  ) {
+    return NextResponse.redirect(new URL("/app/welcome", req.url));
+  }
+
   if (userRole !== "ADMIN_SYSTEM" && path.startsWith("/admin")) {
     return NextResponse.redirect(new URL("/", req.url));
   }

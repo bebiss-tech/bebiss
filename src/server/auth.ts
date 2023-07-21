@@ -1,7 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
+import { sendEmail } from "@/email";
 import { env } from "@/env.mjs";
 import { prisma } from "@/server/db";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { type Onboarding } from "@prisma/client";
 import { compare } from "bcryptjs";
 import { type GetServerSidePropsContext } from "next";
 import {
@@ -33,11 +36,14 @@ declare module "next-auth" {
       id: string;
       // ...other properties
       role?: UserRole;
+      createdAt?: Date;
     } & DefaultSession["user"];
   }
 
   interface User extends DefaultUser {
     role: UserRole;
+    onboardings?: Onboarding[];
+    createdAt?: Date;
   }
 }
 
@@ -103,6 +109,8 @@ export const authOptions: NextAuthOptions = {
               email: true,
               role: true,
               password: true,
+              onboardings: true,
+              createdAt: true,
             },
           });
 
@@ -112,7 +120,14 @@ export const authOptions: NextAuthOptions = {
 
           if (!isValidPassword) return null;
 
-          return user;
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            onboardings: user.onboardings,
+            createdAt: user.createdAt,
+          };
         } catch (err) {
           console.log(err);
           return null;
@@ -147,8 +162,9 @@ export const authOptions: NextAuthOptions = {
           ...session.user,
           id: token.sub,
           // @ts-ignore
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           role: token.user.role,
+          // @ts-ignore
+          createdAt: token.user.createdAt,
         },
       };
     },
@@ -160,24 +176,41 @@ export const authOptions: NextAuthOptions = {
     },
   },
   events: {
-    async signIn(message) {
-      if (message.isNewUser) {
-        const email = message.user.email as string;
-        const user = await prisma.user.findUnique({
-          where: { email },
-          select: {
-            name: true,
-            createdAt: true,
-          },
-        });
-        // only send the welcome email if the user was created in the last 10s
-        // (this is a workaround because the `isNewUser` flag is triggered when a user does `dangerousEmailAccountLinking`)
-        if (
-          user?.createdAt &&
-          new Date(user.createdAt).getTime() > Date.now() - 10000
-        ) {
-          console.log("Sending welcome email to", email);
+    async signIn({ user, isNewUser, profile }) {
+      const email = user.email as string;
+      const welcomeOnboarding = user?.onboardings?.find(
+        (onboarding) => onboarding.step === "WELCOME"
+      );
+
+      console.log({
+        isNewUser,
+        profile,
+        user,
+        email,
+        // welcomeOnboarding,
+      });
+
+      if (
+        user?.createdAt &&
+        new Date(user.createdAt).getTime() > Date.now() - 10000
+      ) {
+        console.log(">>>> NEW USER");
+
+        if (!welcomeOnboarding) {
+          await prisma.onboarding.create({
+            data: {
+              step: "WELCOME",
+              userId: user.id,
+            },
+          });
         }
+
+        console.log(">>>> SEND WELCOME EMAIL");
+        // sendEmail({
+        //   email,
+        // })
+
+        return;
       }
     },
   },

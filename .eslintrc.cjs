@@ -33,6 +33,7 @@ const config = {
     "@typescript-eslint/no-unsafe-assignment": "off",
     "@typescript-eslint/no-unsafe-call": "off",
     "import/no-anonymous-default-export": "off",
+    "@typescript-eslint/no-misused-promises": "off",
   },
 };
 

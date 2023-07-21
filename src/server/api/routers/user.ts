@@ -2,7 +2,6 @@ import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import { z } from "zod";
 import { hash } from "bcryptjs";
 import { TRPCError } from "@trpc/server";
-import { signIn } from "next-auth/react";
 
 export const createUserSchema = z.object({
   name: z.string().nonempty({ message: "Name is required." }),
@@ -38,6 +37,11 @@ export const usersRouter = createTRPCRouter({
           name,
           email,
           password: passwordHash,
+          onboardings: {
+            create: {
+              step: "WELCOME",
+            },
+          },
         },
       });
 

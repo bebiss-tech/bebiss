@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/utils/cn";
 
+import { getNameInitials } from "@/utils";
+import { api } from "@/utils/api";
 import NewCompanyModal from "./modals/new-company-modal";
 
 const groups = [
@@ -52,11 +54,38 @@ type PopoverTriggerProps = React.ComponentPropsWithoutRef<
 type CompanySwitcherProps = PopoverTriggerProps;
 
 export default function CompanySwitcher({ className }: CompanySwitcherProps) {
+  const { data, isSuccess, isLoading } = api.companies.listCompanies.useQuery({
+    limit: 40,
+    page: 1,
+  });
+
   const [open, setOpen] = React.useState(false);
   const [showNewCompanyDialog, setShowNewCompanyDialog] = React.useState(false);
-  const [selectedTeam, setSelectedTeam] = React.useState<Company>(
-    groups[0]!.companies[0]!
-  );
+  const [selectedCompany, setSelectedCompany] = React.useState<Company>({
+    label: "",
+    value: "",
+  });
+
+  React.useEffect(() => {
+    if (isSuccess && data?.companies?.length) {
+      setSelectedCompany({
+        label: data.companies[0]!.name,
+        value: data.companies[0]!.id,
+      });
+    }
+  }, [isSuccess, data]);
+
+  if (isLoading) {
+    return (
+      <Button
+        variant="outline"
+        className={cn("w-[300px] justify-between", className)}
+        size="sm"
+      >
+        <span className="truncate">Carregando...</span>
+      </Button>
+    );
+  }
 
   return (
     <>
@@ -72,12 +101,14 @@ export default function CompanySwitcher({ className }: CompanySwitcherProps) {
           >
             <Avatar className="mr-2 h-5 w-5">
               <AvatarImage
-                src={`https://avatar.vercel.sh/${selectedTeam.value}?size=16`}
-                alt={selectedTeam.label}
+                src={`https://avatar.vercel.sh/${getNameInitials(
+                  selectedCompany.label
+                )}?size=16`}
+                alt={selectedCompany.label}
               />
               <AvatarFallback className="text-xs">SC</AvatarFallback>
             </Avatar>
-            <span className="truncate">{selectedTeam.label}</span>
+            <span className="truncate">{selectedCompany.label}</span>
             <CaretSortIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
@@ -86,37 +117,41 @@ export default function CompanySwitcher({ className }: CompanySwitcherProps) {
             <CommandList>
               <CommandInput placeholder="Buscar empresas..." />
               <CommandEmpty>Nenhuma empresa encontrada.</CommandEmpty>
-              {groups.map((group) => (
-                <CommandGroup key={group.label} heading={group.label}>
-                  {group.companies.map((company) => (
+              <CommandGroup heading="Empresa">
+                {data?.companies.map((company) => {
+                  const initials = getNameInitials(company.name);
+                  return (
                     <CommandItem
-                      key={company.value}
+                      key={company.id}
                       onSelect={() => {
-                        setSelectedTeam(company);
+                        setSelectedCompany({
+                          label: company.name,
+                          value: company.id,
+                        });
                         setOpen(false);
                       }}
                       className="text-sm"
                     >
                       <Avatar className="mr-2 h-5 w-5">
                         <AvatarImage
-                          src={`https://avatar.vercel.sh/${company.value}?size=16`}
-                          alt={company.label}
+                          src={`https://avatar.vercel.sh/${initials}?size=16`}
+                          alt={company.name}
                         />
-                        <AvatarFallback>SC</AvatarFallback>
+                        <AvatarFallback>{initials}</AvatarFallback>
                       </Avatar>
-                      {company.label}
+                      {company.name}
                       <CheckIcon
                         className={cn(
                           "ml-auto h-4 w-4",
-                          selectedTeam.value === company.value
+                          selectedCompany.value === company.id
                             ? "opacity-100"
                             : "opacity-0"
                         )}
                       />
                     </CommandItem>
-                  ))}
-                </CommandGroup>
-              ))}
+                  );
+                })}
+              </CommandGroup>
             </CommandList>
             <CommandSeparator />
             <CommandList>
@@ -128,7 +163,7 @@ export default function CompanySwitcher({ className }: CompanySwitcherProps) {
                   }}
                 >
                   <PlusCircledIcon className="mr-2 h-5 w-5" />
-                  Nova empresas
+                  Nova empresa
                 </CommandItem>
               </CommandGroup>
             </CommandList>

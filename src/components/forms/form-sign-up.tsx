@@ -53,7 +53,7 @@ const FormSignUp = () => {
         await signIn("credentials", {
           email: values.email,
           password: values.password,
-          callbackUrl: "/welcome",
+          callbackUrl: "/app/welcome",
         });
 
         toast({
