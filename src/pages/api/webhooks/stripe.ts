@@ -64,10 +64,16 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
         case "checkout.session.completed":
           const checkoutSession = event.data.object as Stripe.Checkout.Session;
 
+          if (checkoutSession.client_reference_id === null) {
+            return;
+          }
+
           await saveSubscription({
             customerId: checkoutSession.customer?.toString() as string,
             subscriptionId: checkoutSession.subscription?.toString() as string,
             createAction: true,
+            companyId: checkoutSession.client_reference_id,
+            customerEmail: checkoutSession.customer_email!,
           });
 
           break;

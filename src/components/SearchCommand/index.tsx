@@ -12,12 +12,11 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import {
+  BriefcaseIcon,
   Calendar,
   MessageCircle,
   Search,
-  Stethoscope,
   Store,
-  Syringe,
   User,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -45,18 +44,13 @@ const SearchCommand = () => {
             },
           },
           {
-            icon: Syringe,
-            label: "Novo procedimento",
-            onClick: () => {},
-          },
-          {
-            icon: Stethoscope,
+            icon: BriefcaseIcon,
             label: "Novo profissional",
             onClick: () => {},
           },
           {
             icon: User,
-            label: "Novo paciente",
+            label: "Novo cliente",
             onClick: () => {},
           },
         ],

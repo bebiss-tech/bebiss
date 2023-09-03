@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 const menu = [
   {
     label: "Dashboard",
-    href: "/app/",
+    href: "/app",
     icon: Home,
   },
   {

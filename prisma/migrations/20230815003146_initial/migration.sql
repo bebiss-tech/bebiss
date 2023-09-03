@@ -41,14 +41,14 @@ CREATE TABLE `User` (
     `image` VARCHAR(191) NULL,
     `stripeCustomerId` VARCHAR(191) NULL,
     `role` ENUM('ADMIN_SYSTEM', 'ADMIN_COMPANY', 'PROFESSIONAL') NOT NULL DEFAULT 'ADMIN_COMPANY',
-    `companyId` VARCHAR(191) NULL,
     `addressId` VARCHAR(191) NULL,
     `appointmentId` VARCHAR(191) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `User_email_key`(`email`),
     UNIQUE INDEX `User_addressId_key`(`addressId`),
     UNIQUE INDEX `User_appointmentId_key`(`appointmentId`),
-    INDEX `User_companyId_idx`(`companyId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -83,22 +83,6 @@ CREATE TABLE `Subscription` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Plan` (
-    `id` VARCHAR(191) NOT NULL,
-    `name` VARCHAR(191) NOT NULL,
-    `priceInCents` INTEGER NOT NULL,
-    `interval` ENUM('month', 'quarter', 'semiannual', 'year') NOT NULL,
-    `stripePriceId` VARCHAR(191) NOT NULL,
-    `stripeProductId` VARCHAR(191) NOT NULL,
-    `active` BOOLEAN NOT NULL,
-    `benefits` JSON NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
-
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
 CREATE TABLE `Address` (
     `id` VARCHAR(191) NOT NULL,
     `zipCode` VARCHAR(191) NOT NULL,
@@ -115,7 +99,10 @@ CREATE TABLE `Address` (
 CREATE TABLE `Company` (
     `id` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NOT NULL,
+    `phone` VARCHAR(191) NOT NULL,
     `addressId` VARCHAR(191) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `Company_addressId_key`(`addressId`),
     PRIMARY KEY (`id`)
@@ -147,6 +134,8 @@ CREATE TABLE `Client` (
     `cpf` VARCHAR(191) NULL,
     `birthday` DATETIME(3) NULL,
     `gender` ENUM('male', 'famale', 'uninformed') NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
     `companyId` VARCHAR(191) NOT NULL,
     `addressId` VARCHAR(191) NOT NULL,
 
@@ -197,4 +186,25 @@ CREATE TABLE `Template` (
 
     INDEX `Template_companyId_idx`(`companyId`),
     PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Onboarding` (
+    `id` VARCHAR(191) NOT NULL,
+    `step` ENUM('COMPLETE_REGISTRATION', 'WELCOME', 'CALENDAR', 'COMPANY', 'SERVICES', 'CLIENTS', 'APPOINTMENTS') NOT NULL DEFAULT 'WELCOME',
+    `userId` VARCHAR(191) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `completedAt` DATETIME(3) NULL,
+
+    INDEX `Onboarding_userId_idx`(`userId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `_CompanyToUser` (
+    `A` VARCHAR(191) NOT NULL,
+    `B` VARCHAR(191) NOT NULL,
+
+    UNIQUE INDEX `_CompanyToUser_AB_unique`(`A`, `B`),
+    INDEX `_CompanyToUser_B_index`(`B`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

@@ -4,6 +4,7 @@ import { stripe } from "@/server/stripe";
 
 const createCheckoutSessionSchema = z.object({
   stripePriceId: z.string(),
+  companyId: z.string(),
   successUrl: z.string().url(),
   cancelUrl: z.string().url(),
 });
@@ -12,7 +13,7 @@ export const checkoutSessionRouter = createTRPCRouter({
   createCheckoutSession: protectedProcedure
     .input(createCheckoutSessionSchema)
     .mutation(async ({ ctx, input }) => {
-      const { stripePriceId, cancelUrl, successUrl } = input;
+      const { stripePriceId, cancelUrl, successUrl, companyId } = input;
       const {
         user: { email },
       } = ctx.session;
@@ -27,28 +28,8 @@ export const checkoutSessionRouter = createTRPCRouter({
         throw new Error("User not found");
       }
 
-      let customerId = user?.stripeCustomerId;
-
-      if (!customerId) {
-        const stripeCustomer = await stripe.customers.create({
-          email: user.email as string,
-          name: user.name as string,
-        });
-
-        customerId = stripeCustomer.id;
-
-        await ctx.prisma.user.update({
-          where: {
-            id: user?.id,
-          },
-          data: {
-            stripeCustomerId: customerId,
-          },
-        });
-      }
-
       const stripeCheckoutSession = await stripe.checkout.sessions.create({
-        customer: customerId,
+        customer_email: email as string,
         payment_method_types: ["card"],
         billing_address_collection: "auto",
         line_items: [
@@ -61,6 +42,7 @@ export const checkoutSessionRouter = createTRPCRouter({
         allow_promotion_codes: true,
         success_url: successUrl,
         cancel_url: cancelUrl,
+        client_reference_id: companyId,
       });
 
       return {

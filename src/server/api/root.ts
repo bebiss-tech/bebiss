@@ -2,6 +2,8 @@ import { createTRPCRouter } from "@/server/api/trpc";
 import { usersRouter } from "./routers/user";
 import { companiesRouter } from "./routers/companies";
 import { brasilAPIRouter } from "./routers/brasil-api";
+import { onboardingRouter } from "./routers/onboarding";
+import { checkoutSessionRouter } from "./routers/create-checkout-session";
 
 /**
  * This is the primary router for your server.
@@ -12,6 +14,8 @@ export const appRouter = createTRPCRouter({
   users: usersRouter,
   companies: companiesRouter,
   brasilAPI: brasilAPIRouter,
+  checkout: checkoutSessionRouter,
+  onboarding: onboardingRouter,
 });
 
 // export type definition of API

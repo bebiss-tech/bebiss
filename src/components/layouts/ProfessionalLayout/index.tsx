@@ -19,12 +19,12 @@ export const metadata: Metadata = {
 const menu = [
   {
     label: "Dashboard",
-    href: "/admin/",
+    href: "/p",
     icon: Home,
   },
   {
     label: "Agenda",
-    href: "/app/agenda",
+    href: "/p/agenda",
     icon: CalendarDays,
   },
 ];

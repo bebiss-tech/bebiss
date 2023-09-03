@@ -115,7 +115,7 @@ const FormSignIn = () => {
         Fazer login com o Google
       </Button>
 
-      <div className="relative">
+      {/* <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t" />
         </div>
@@ -124,9 +124,9 @@ const FormSignIn = () => {
             ou faça login com email
           </span>
         </div>
-      </div>
+      </div> */}
 
-      <form onSubmit={onSubmit}>
+      {/* <form onSubmit={onSubmit}>
         <div className="grid space-y-4">
           <div className="space-y-1">
             <Label htmlFor="email">Email</Label>
@@ -169,10 +169,11 @@ const FormSignIn = () => {
             Entrar
           </Button>
         </div>
-      </form>
+      </form> */}
 
-      <p className="text-muted-foreground px-8 text-center text-xs">
-        Ao clicar em Entrar, você concorda com nossos{" "}
+      <p className="text-muted-foreground px-6 text-center text-xs">
+        Ao clicar em <span className="italic">Fazer login com o Google</span>,
+        você concorda com nossos{" "}
         <Link
           href="/termos-de-uso"
           className="hover:text-primary underline underline-offset-4"

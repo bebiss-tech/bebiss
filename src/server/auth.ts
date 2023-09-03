@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { sendEmail } from "@/email";
+import WelcomeEmail from "@/email/welcome";
 import { env } from "@/env.mjs";
 import { prisma } from "@/server/db";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
@@ -12,12 +13,17 @@ import {
   type DefaultSession,
   type DefaultUser,
   type NextAuthOptions,
+  type User,
 } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { z } from "zod";
 
-type UserRole = "ADMIN_SYSTEM" | "ADMIN_COMPANY" | "PROFESSIONAL";
+type UserRole =
+  | "ADMIN_SYSTEM"
+  | "ADMIN_COMPANY"
+  | "MEMBER_COMPANY"
+  | "PROFESSIONAL";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email." }),
@@ -42,7 +48,7 @@ declare module "next-auth" {
 
   interface User extends DefaultUser {
     role: UserRole;
-    onboardings?: Onboarding[];
+    onboarding: Onboarding | null;
     createdAt?: Date;
   }
 }
@@ -109,7 +115,7 @@ export const authOptions: NextAuthOptions = {
               email: true,
               role: true,
               password: true,
-              onboardings: true,
+              onboarding: true,
               createdAt: true,
             },
           });
@@ -120,12 +126,14 @@ export const authOptions: NextAuthOptions = {
 
           if (!isValidPassword) return null;
 
+          console.log(user);
+
           return {
             id: user.id,
             name: user.name,
             email: user.email,
             role: user.role,
-            onboardings: user.onboardings,
+            onboarding: user.onboarding,
             createdAt: user.createdAt,
           };
         } catch (err) {
@@ -155,47 +163,53 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     session: ({ session, token }) => {
+      // console.log(token);
       return {
         ...session,
-        token,
+        token: {
+          ...token,
+          ALAN: "GABRIEL",
+        },
         user: {
           ...session.user,
           id: token.sub,
           // @ts-ignore
           role: token.user.role,
           // @ts-ignore
+          onboarding: token.user.onboarding,
+          // @ts-ignore
           createdAt: token.user.createdAt,
         },
       };
     },
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user) {
         token.user = user;
       }
+
+      // @ts-ignore
+      if (!token?.user?.onboarding) {
+        const onboarding = await prisma.onboarding.findUnique({
+          where: {
+            userId: token.sub,
+          },
+        });
+        // @ts-ignore
+        token.user.onboarding = onboarding;
+      }
+
       return token;
     },
   },
   events: {
-    async signIn({ user, isNewUser, profile }) {
+    async signIn({ user }) {
       const email = user.email as string;
-      const welcomeOnboarding = user?.onboardings?.find(
-        (onboarding) => onboarding.step === "WELCOME"
-      );
-
-      console.log({
-        isNewUser,
-        profile,
-        user,
-        email,
-        // welcomeOnboarding,
-      });
+      const welcomeOnboarding = user.onboarding?.step === "WELCOME";
 
       if (
         user?.createdAt &&
         new Date(user.createdAt).getTime() > Date.now() - 10000
       ) {
-        console.log(">>>> NEW USER");
-
         if (!welcomeOnboarding) {
           await prisma.onboarding.create({
             data: {
@@ -205,10 +219,15 @@ export const authOptions: NextAuthOptions = {
           });
         }
 
-        console.log(">>>> SEND WELCOME EMAIL");
-        // sendEmail({
-        //   email,
-        // })
+        void sendEmail({
+          subject: "Bem vindo à Bebiss!",
+          email,
+          react: WelcomeEmail({
+            email,
+            name: user.name || null,
+          }),
+          marketing: true,
+        });
 
         return;
       }

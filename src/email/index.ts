@@ -20,7 +20,7 @@ export const sendEmail = async ({
 }) => {
   return resend.emails.send({
     from: marketing
-      ? "Alan da Bebiss <gabriel@bebiss.com.br>"
+      ? "Alan Gabriel da Bebiss <gabriel@bebiss.com.br>"
       : "Alan Gabriel <gabriel@bebiss.com.br>",
     to: test ? "delivered@resend.dev" : email,
     subject,

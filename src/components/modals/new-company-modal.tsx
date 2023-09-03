@@ -2,15 +2,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-
+import { DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 
 import Select from "@/components/Select";
@@ -19,9 +11,11 @@ import { api } from "@/utils/api";
 import { brazilianStates } from "@/utils/brazilian-states";
 import { phoneMask, removeMask, zipcodeMask } from "@/utils/masks";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { use, useEffect } from "react";
+import { useRouter } from "next/router";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
+import Modal from "./base-modal";
 
 const createCompanySchema = z.object({
   companyName: z
@@ -74,12 +68,15 @@ type Inputs = z.infer<typeof createCompanySchema>;
 type NewCompanyModalProps = {
   onChangeVisibility: (open: boolean) => void;
   open: boolean;
+  welcomeFlow?: boolean;
 };
 
 const NewCompanyModal = ({
   onChangeVisibility,
   open,
+  welcomeFlow,
 }: NewCompanyModalProps) => {
+  const router = useRouter();
   const { toast } = useToast();
   const {
     register,
@@ -99,6 +96,8 @@ const NewCompanyModal = ({
   };
 
   const { mutate: createCompany } = api.companies.createCompany.useMutation();
+  const { mutate: changeOnboardingStep } =
+    api.onboarding.changeStep.useMutation();
 
   const onSubmit = handleSubmit((values) => {
     createCompany(
@@ -108,7 +107,33 @@ const NewCompanyModal = ({
         zipcode: removeMask(values.zipcode),
       },
       {
-        onSuccess: ({ result: { name } }) => {
+        onSuccess: ({ result: { name, id } }) => {
+          if (welcomeFlow) {
+            const query = {
+              type: "upgrade",
+              id,
+            };
+
+            changeOnboardingStep({
+              step: "UPGRADE",
+              query,
+            });
+
+            toast({
+              title: `${name} criada com sucesso!`,
+              description: `Assine o plano PRO para ter acesso a todas as funcionalidades.`,
+            });
+
+            setTimeout(() => {
+              void router.push({
+                pathname: "/app/welcome",
+                query,
+              });
+            }, 1000);
+
+            return;
+          }
+
           toast({
             title: `${name} criada com sucesso!`,
             description: `Agora você pode realizar agendamentos para a ${name}.`,
@@ -161,127 +186,133 @@ const NewCompanyModal = ({
   }, [reset]);
 
   return (
-    <Dialog open={open} onOpenChange={onChangeVisibility}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Nova empresa</DialogTitle>
-          <DialogDescription>
+    <Modal
+      showModal={open}
+      setShowModal={onChangeVisibility}
+      welcomeFlow={welcomeFlow}
+    >
+      <form onSubmit={onSubmit} className="space-y-4 p-6">
+        <div>
+          <h2 className="mb-1 text-lg font-medium">Nova empresa</h2>
+
+          <p className="text-sm text-gray-500">
             Adicione uma nova empresa para gerenciar agendamentos.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div>
-            <div className="space-y-4 py-2 pb-4">
-              <TextField
-                label="Nome"
-                placeholder="Bebiss"
-                error={errors.companyName?.message}
-                {...register("companyName")}
-              />
+          </p>
+        </div>
 
-              <Controller
-                name="phone"
-                control={control}
-                render={({
-                  field: { onChange, value },
-                  fieldState: { error },
-                }) => (
-                  <TextField
-                    label="Telefone"
-                    placeholder="(61) 99999-9999"
-                    value={value}
-                    onChange={({ target: { value } }) => {
-                      onChange(phoneMask(value));
-                    }}
-                    error={error?.message}
-                  />
-                )}
-              />
+        <div>
+          <div className="space-y-4 py-2 pb-4">
+            <TextField
+              label="Nome"
+              placeholder="Bebiss"
+              error={errors.companyName?.message}
+              {...register("companyName")}
+            />
 
-              <div className="space-y-4">
-                <h4 className="text-muted-foreground -mb-2 text-sm text-slate-500 ">
-                  Endereço
-                </h4>
+            <Controller
+              name="phone"
+              control={control}
+              render={({
+                field: { onChange, value },
+                fieldState: { error },
+              }) => (
+                <TextField
+                  label="Telefone"
+                  placeholder="(61) 99999-9999"
+                  value={value}
+                  onChange={({ target: { value } }) => {
+                    onChange(phoneMask(value));
+                  }}
+                  error={error?.message}
+                />
+              )}
+            />
 
-                <div className="grid grid-cols-2 gap-4">
-                  <Controller
-                    name="zipcode"
-                    control={control}
-                    render={({
-                      field: { onChange, value },
-                      fieldState: { error },
-                    }) => (
-                      <TextField
-                        label="CEP"
-                        value={value}
-                        onChange={({ target: { value } }) => {
-                          onChange(zipcodeMask(value));
-                        }}
+            <div className="space-y-4">
+              <h4 className="text-muted-foreground -mb-2 text-sm text-slate-500 ">
+                Endereço
+              </h4>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Controller
+                  name="zipcode"
+                  control={control}
+                  render={({
+                    field: { onChange, value },
+                    fieldState: { error },
+                  }) => (
+                    <TextField
+                      label="CEP"
+                      value={value}
+                      onChange={({ target: { value } }) => {
+                        onChange(zipcodeMask(value));
+                      }}
+                      error={error?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  control={control}
+                  name="state"
+                  render={({
+                    fieldState: { error },
+                    field: { onChange, value },
+                  }) => {
+                    return (
+                      <Select
+                        label="Estado"
+                        options={brazilianStates}
+                        placeholder="Estado"
                         error={error?.message}
+                        onValueChange={onChange}
+                        value={value}
                       />
-                    )}
-                  />
+                    );
+                  }}
+                />
+              </div>
 
-                  <Controller
-                    control={control}
-                    name="state"
-                    render={({
-                      fieldState: { error },
-                      field: { onChange, value },
-                    }) => {
-                      return (
-                        <Select
-                          label="Estado"
-                          options={brazilianStates}
-                          placeholder="Estado"
-                          error={error?.message}
-                          onValueChange={onChange}
-                          value={value}
-                        />
-                      );
-                    }}
-                  />
-                </div>
+              <div className="grid grid-cols-2 gap-4">
+                <TextField
+                  label="Cidade"
+                  error={errors.city?.message}
+                  {...register("city")}
+                />
 
-                <div className="grid grid-cols-2 gap-4">
-                  <TextField
-                    label="Cidade"
-                    error={errors.city?.message}
-                    {...register("city")}
-                  />
+                <TextField
+                  label="Bairro"
+                  error={errors.neighborhood?.message}
+                  {...register("neighborhood")}
+                />
+              </div>
 
-                  <TextField
-                    label="Bairro"
-                    error={errors.neighborhood?.message}
-                    {...register("neighborhood")}
-                  />
-                </div>
+              <div className="grid grid-cols-[1fr_100px] gap-4">
+                <TextField
+                  label="Rua"
+                  error={errors.street?.message}
+                  {...register("street")}
+                />
 
-                <div className="grid grid-cols-[1fr_100px] gap-4">
-                  <TextField
-                    label="Rua"
-                    error={errors.street?.message}
-                    {...register("street")}
-                  />
-
-                  <TextField
-                    label="Numero"
-                    error={errors.number?.message}
-                    {...register("number")}
-                  />
-                </div>
+                <TextField
+                  label="Numero"
+                  error={errors.number?.message}
+                  {...register("number")}
+                />
               </div>
             </div>
           </div>
-          <DialogFooter>
+        </div>
+        <DialogFooter>
+          {!welcomeFlow && (
             <Button type="button" variant="outline" onClick={onClose}>
               Cancelar
             </Button>
-            <Button type="submit">Criar</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          )}
+          <Button type="submit">Criar</Button>
+        </DialogFooter>
+      </form>
+    </Modal>
   );
 };
 

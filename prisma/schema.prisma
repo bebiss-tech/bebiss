@@ -41,6 +41,7 @@ model Session {
 enum UserRole {
   ADMIN_SYSTEM
   ADMIN_COMPANY
+  MEMBER_COMPANY
   PROFESSIONAL
 }
 
@@ -55,10 +56,9 @@ model User {
   stripeCustomerId String?
   role             UserRole  @default(ADMIN_COMPANY)
 
-  accounts     Account[]
-  sessions     Session[]
-  subscription Subscription[]
-  companies    Company[]
+  accounts  Account[]
+  sessions  Session[]
+  companies Company[]
 
   addressId String?  @unique
   address   Address? @relation(fields: [addressId], references: [id], onDelete: Cascade)
@@ -66,7 +66,7 @@ model User {
   appointmentId String?      @unique
   appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
 
-  onboardings Onboarding[]
+  onboarding Onboarding?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -78,49 +78,6 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
-}
-
-model Subscription {
-  id                   String   @id @default(uuid())
-  userId               String
-  status               String
-  stripePriceId        String
-  stripeSubscriptionId String
-  currentPeriodEnd     Int
-  currentPeriodStart   Int
-  amount               Int
-  latestInvoiceId      String
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  planId               String
-
-  plan Plan @relation(fields: [planId], references: [id])
-  user User @relation(fields: [userId], references: [id])
-
-  @@index([planId])
-  @@index([userId])
-}
-
-enum IntervalEnum {
-  month
-  quarter
-  semiannual
-  year
-}
-
-model Plan {
-  id              String       @id @default(uuid())
-  name            String
-  priceInCents    Int
-  interval        IntervalEnum
-  stripePriceId   String
-  stripeProductId String
-  active          Boolean
-  benefits        Json?        @default("[]")
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  subscriptions Subscription[]
 }
 
 model Address {
@@ -137,6 +94,11 @@ model Address {
   company Company?
 }
 
+enum Plan {
+  free
+  pro
+}
+
 model Company {
   id           String        @id @default(uuid())
   name         String
@@ -146,8 +108,15 @@ model Company {
   appointments Appointment[]
   templates    Template[]
   users        User[]
-  addressId    String        @unique
-  address      Address       @relation(fields: [addressId], references: [id], onDelete: Cascade)
+
+  stripeCustomerId     String? @unique // Stripe subscription ID
+  stripeSubscriptionId String? @unique // Stripe subscription ID
+  stripePriceId        String?
+  plan                 Plan    @default(free)
+  billingCycleStart    Int? // day of the month when the billing cycle starts
+
+  addressId String  @unique
+  address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -280,23 +249,29 @@ model Template {
   @@index([companyId])
 }
 
-enum Steps {
-  COMPLETE_REGISTRATION
+enum OnboardingSteps {
   WELCOME
-  CALENDAR
-  COMPANY
-  SERVICES
-  CLIENTS
-  APPOINTMENTS
+
+  // ADMIN_COMPANY steps
+  CREATE_COMPANY
+  UPGRADE
+  CONNECT_WHATSAPP
+
+  // MEMBER_COMPANY steps
+
+  // PROFESSIONAL steps
+  CONNECT_CALENDAR
+
+  COMPLETE_SETUP
 }
 
 model Onboarding {
-  id          String    @id @default(uuid())
-  step        Steps     @default(WELCOME)
-  userId      String?
-  User        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now())
-  completedAt DateTime?
+  id        String          @id @default(uuid())
+  step      OnboardingSteps @default(WELCOME)
+  userId    String?         @unique
+  query     String?
+  User      User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime        @default(now())
 
   @@index([userId])
 }

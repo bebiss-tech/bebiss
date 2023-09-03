@@ -1,77 +1,114 @@
+import { log } from "@/lib/log";
 import { prisma } from "./db";
 import { stripe } from "./stripe";
+import qs from "query-string";
+import { newSubscriptionDiscordMessage } from "@/lib/log/messages";
+import { getPlanFromPriceId } from "@/utils/plans";
+
+type Create = {
+  createAction: true;
+  companyId: string;
+};
+
+type Update = {
+  createAction?: false;
+  companyId?: string;
+};
 
 type SaveSubscriptionParams = {
   subscriptionId: string;
   customerId: string;
-  createAction?: boolean;
+  customerEmail?: string;
+} & (Create | Update);
+
+const recurringInterval = {
+  month: "mensal",
+  year: "anual",
 };
 
 export const saveSubscription = async ({
   customerId,
   subscriptionId,
   createAction = false,
+  companyId,
+  customerEmail,
 }: SaveSubscriptionParams) => {
   try {
     const user = await prisma.user.findFirst({
       where: {
-        stripeCustomerId: customerId,
+        email: customerEmail,
       },
     });
 
     if (!user) return;
 
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    const product = subscription.items.data[0]!.price.product;
+    const priceId = subscription.items.data[0]!.price.id;
+    const interval = subscription.items.data[0]!.price.recurring!.interval;
+    const plan = getPlanFromPriceId(priceId);
+    const period = recurringInterval[interval as "month" | "year"];
+
+    console.log({
+      subscriptionId,
+      customerId,
+      createAction,
+      companyId,
+    });
 
     if (createAction) {
-      const plan = await prisma.plan.findFirst({
+      const company = await prisma.company.update({
         where: {
-          stripeProductId: product.toString(),
+          id: companyId,
         },
-      });
-
-      await prisma.subscription.create({
         data: {
-          amount: subscription.items.data[0]!.price.unit_amount!,
-          currentPeriodEnd: subscription.current_period_end,
-          currentPeriodStart: subscription.current_period_start,
-          latestInvoiceId: subscription.latest_invoice!.toString(),
-          status: subscription.status,
+          stripeCustomerId: customerId,
+          plan: "pro",
           stripePriceId: subscription.items.data[0]!.price.id,
-          stripeSubscriptionId: subscription.id,
-          user: {
-            connect: {
-              id: user?.id,
-            },
-          },
-          plan: {
-            connect: {
-              id: plan?.id,
-            },
-          },
-        },
-      });
-
-      return;
-    } else {
-      const subscriptionExists = await prisma.subscription.findFirst({
-        where: {
+          billingCycleStart: new Date().getDate(),
           stripeSubscriptionId: subscriptionId,
         },
       });
 
-      if (subscriptionExists) {
-        await prisma.subscription.update({
-          where: {
-            id: subscriptionExists.id,
-          },
-          data: {
-            status: subscription.status,
-          },
-        });
-      }
+      const query = qs.stringify({
+        type: "whatsapp",
+        id: companyId,
+      });
+
+      await prisma.onboarding.update({
+        where: {
+          userId: user.id,
+        },
+        data: {
+          step: "CONNECT_WHATSAPP",
+          query,
+        },
+      });
+
+      await log({
+        type: "new-subscription",
+        message: newSubscriptionDiscordMessage({
+          companyName: company.name,
+          createdAt: subscription.created.toString(),
+          period,
+          plan: plan.name,
+          value: subscription.items.data[0]!.price.unit_amount! / 100,
+        }),
+      });
+
+      return;
     }
+
+    const subscriptionPlan = subscription.status === "active" ? "pro" : "free";
+
+    await prisma.company.update({
+      where: {
+        id: companyId,
+        stripeSubscriptionId: subscriptionId,
+      },
+      data: {
+        plan: subscriptionPlan,
+      },
+    });
   } catch (err) {
     console.log(err);
   }

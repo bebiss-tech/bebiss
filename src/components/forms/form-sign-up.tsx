@@ -101,7 +101,7 @@ const FormSignUp = () => {
         Criar conta com o Google
       </Button>
 
-      <div className="relative">
+      {/* <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t" />
         </div>
@@ -110,9 +110,9 @@ const FormSignUp = () => {
             ou crie sua conta com email
           </span>
         </div>
-      </div>
+      </div> */}
 
-      <form onSubmit={onSubmit}>
+      {/* <form onSubmit={onSubmit}>
         <div className="grid space-y-4">
           <div className="space-y-1">
             <Label htmlFor="name">Nome</Label>
@@ -170,9 +170,11 @@ const FormSignUp = () => {
             Criar conta
           </Button>
         </div>
-      </form>
+      </form> */}
+
       <p className="text-muted-foreground px-8 text-center text-xs">
-        Ao clicar em Entrar, você concorda com nossos{" "}
+        Ao clicar em <span className="italic">Criar conta com o Google</span>,
+        você concorda com nossos{" "}
         <Link
           href="/termos-de-uso"
           className="hover:text-primary underline underline-offset-4"

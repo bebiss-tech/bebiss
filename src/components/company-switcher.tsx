@@ -118,15 +118,15 @@ export default function CompanySwitcher({ className }: CompanySwitcherProps) {
               <CommandInput placeholder="Buscar empresas..." />
               <CommandEmpty>Nenhuma empresa encontrada.</CommandEmpty>
               <CommandGroup heading="Empresa">
-                {data?.companies.map((company) => {
-                  const initials = getNameInitials(company.name);
+                {data?.companies.map(({ name, id }) => {
+                  const initials = getNameInitials(name);
                   return (
                     <CommandItem
-                      key={company.id}
+                      key={id}
                       onSelect={() => {
                         setSelectedCompany({
-                          label: company.name,
-                          value: company.id,
+                          label: name,
+                          value: id,
                         });
                         setOpen(false);
                       }}
@@ -135,15 +135,15 @@ export default function CompanySwitcher({ className }: CompanySwitcherProps) {
                       <Avatar className="mr-2 h-5 w-5">
                         <AvatarImage
                           src={`https://avatar.vercel.sh/${initials}?size=16`}
-                          alt={company.name}
+                          alt={name}
                         />
                         <AvatarFallback>{initials}</AvatarFallback>
                       </Avatar>
-                      {company.name}
+                      {name}
                       <CheckIcon
                         className={cn(
                           "ml-auto h-4 w-4",
-                          selectedCompany.value === company.id
+                          selectedCompany.value === id
                             ? "opacity-100"
                             : "opacity-0"
                         )}

@@ -23,6 +23,9 @@ export const env = createEnv({
     STRIPE_API_KEY: z.string(),
     STRIPE_WEBHOOK_SECRET: z.string(),
     RESEND_API_KEY: z.string(),
+    INSTANCE_SECRET: z.string(),
+    DISCORD_LOG_WEBHOOK_URL: z.string(),
+    DISCORD_SUBSCRIPTION_WEBHOOK_URL: z.string(),
   },
 
   client: {
@@ -41,6 +44,9 @@ export const env = createEnv({
     NEXT_PUBLIC_STRIPE_PUBLIC_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
+    INSTANCE_SECRET: process.env.INSTANCE_SECRET,
+    DISCORD_LOG_WEBHOOK_URL: process.env.DISCORD_LOG_WEBHOOK_URL,
+    DISCORD_SUBSCRIPTION_WEBHOOK_URL: process.env.DISCORD_SUBSCRIPTION_WEBHOOK_URL,
   },
 
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,

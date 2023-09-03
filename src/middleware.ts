@@ -1,6 +1,8 @@
-import { type UserRole } from "@prisma/client";
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+import { type User } from "next-auth";
 import { getToken } from "next-auth/jwt";
 import { NextResponse, type NextRequest } from "next/server";
+import { conn } from "./lib/planetscale";
 
 const AUTH_PATHS = ["/auth/sign-in", "/auth/sign-up", "/"];
 
@@ -14,22 +16,25 @@ type Session = {
   jti: string;
 };
 
-type User = {
-  id: string;
-  name: string;
-  email: string;
-  emailVerified: string;
-  password: string;
-  stripeCustomerId?: string;
-  role: UserRole;
-  createdAt: string;
-};
+// type User = {
+//   id: string;
+//   name: string;
+//   email: string;
+//   emailVerified: string;
+//   password: string;
+//   stripeCustomerId?: string;
+//   role: UserRole;
+//   createdAt: string;
+// };
 
 const rolesConfig = {
   ADMIN_SYSTEM: {
     route: "/admin",
   },
   ADMIN_COMPANY: {
+    route: "/app",
+  },
+  MEMBER_COMPANY: {
     route: "/app",
   },
   PROFESSIONAL: {
@@ -49,11 +54,30 @@ export default async function middleware(req: NextRequest) {
   const role = rolesConfig[userRole];
 
   if (
-    session?.user?.createdAt &&
-    new Date(session?.user?.createdAt).getTime() > Date.now() - 10000 &&
-    path !== "/app/welcome"
+    (session?.user?.createdAt &&
+      new Date(session?.user?.createdAt).getTime() > Date.now() - 10000) ||
+    (session?.user && session.user?.onboarding?.step !== "COMPLETE_SETUP")
   ) {
-    return NextResponse.redirect(new URL("/app/welcome", req.url));
+    const search = req.nextUrl.search.substring(1);
+    // select step, query de Onboarding quando userId
+    const onboarding = await conn
+      ?.execute("SELECT step, query FROM Onboarding WHERE userId = ?", [
+        session.sub,
+      ])
+      .then(
+        (res) => res.rows[0] as { step: string; query?: string } | undefined
+      );
+
+    if (onboarding?.step === "COMPLETE_SETUP") return;
+
+    if (
+      (path === "/app/welcome" && onboarding?.step === "WELCOME") ||
+      search === onboarding?.query
+    )
+      return;
+
+    const query = onboarding?.query ? `?${onboarding?.query}` : "";
+    return NextResponse.redirect(new URL(`/app/welcome${query}`, req.url));
   }
 
   if (userRole !== "ADMIN_SYSTEM" && path.startsWith("/admin")) {
@@ -91,6 +115,6 @@ export const config = {
      * 5. /_vercel (Vercel internals)
      * 6. /favicon.ico, /sitemap.xml, /robots.txt (static files)
      */
-    "/((?!api/|_next/|_proxy/|_static|_vercel|favicon.ico|sitemap.xml).*)",
+    "/((?!api/|_next/|_proxy/|images|_static|_vercel|favicon.ico|sitemap.xml).*)",
   ],
 };
