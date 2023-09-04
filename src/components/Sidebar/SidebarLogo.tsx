@@ -11,6 +11,7 @@ type SidebarLogoProps = {
 const roles = {
   ADMIN_SYSTEM: "ADMIN ACCOUNT",
   ADMIN_COMPANY: "",
+  MEMBER_COMPANY: "",
   PROFESSIONAL: "Profissional",
   "": "",
 };
