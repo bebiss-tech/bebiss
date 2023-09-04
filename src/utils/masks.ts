@@ -40,3 +40,12 @@ export const zipcodeMask = (value: string) => {
 export const removeMask = (value = "") => {
   return value.replace(/\D/g, "");
 };
+
+export const dateMask = (value: string) => {
+  return value
+    .toString()
+    .replace(/\D/g, "")
+    .replace(/(\d{2})(\d)/, "$1/$2")
+    .replace(/(\d{2})(\d)/, "$1/$2")
+    .replace(/(\d{4})(\d)/, "$1");
+};

@@ -4,10 +4,8 @@
 
 import { STAGGER_CHILD_VARIANTS } from "@/utils/animations";
 import { api } from "@/utils/api";
-import { cn } from "@/utils/cn";
 import { motion } from "framer-motion";
 import { BadgeCheck, RotateCw } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Confetti from "react-dom-confetti";

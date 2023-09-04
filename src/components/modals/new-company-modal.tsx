@@ -24,7 +24,7 @@ const createCompanySchema = z.object({
       message: "Nome deve ter no mínimo 3 caracteres",
     })
     .max(150, {
-      message: "Nome deve ter no máximo 255 caracteres",
+      message: "Nome deve ter no máximo 150 caracteres",
     }),
   phone: z
     .string({

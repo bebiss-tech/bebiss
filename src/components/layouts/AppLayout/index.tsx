@@ -7,7 +7,6 @@ import {
   MessageSquareDashed,
   PackageIcon,
   Store,
-  TrendingUp,
   Users2,
 } from "lucide-react";
 import { type Metadata } from "next";
@@ -19,7 +18,7 @@ import { Sidebar } from "@/components/Sidebar";
 import UserDropdown from "@/components/UserDropdown";
 import CompanySwitcher from "@/components/company-switcher";
 import Meta from "@/components/layouts/meta";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Toaster } from "@/components/ui/toaster";
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
@@ -36,8 +35,9 @@ const menu = [
   },
   {
     label: "Agenda",
-    href: "/app/agenda",
+    href: "",
     icon: CalendarDays,
+    soon: true,
   },
   {
     label: "Agendamentos",
@@ -66,8 +66,9 @@ const menu = [
   },
   {
     label: "Templates",
-    href: "/app/templates",
+    href: "",
     icon: MessageSquareDashed,
+    soon: true,
   },
 ];
 
@@ -93,27 +94,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
     return "loading...";
   }
 
-  // const handleUpgrade = () => {
-  //   mutate(
-  //     {
-  //       stripePriceId,
-  //       successUrl: window.location.origin,
-  //       cancelUrl: window.location.origin,
-  //     },
-  //     {
-  //       async onSuccess({ sessionId }) {
-  //         try {
-  //           const stripe = await getStripeJs();
-
-  //           await stripe.redirectToCheckout({ sessionId });
-  //         } catch (err) {
-  //           console.log("❌ deu erro aqui meu patrão");
-  //         }
-  //       },
-  //     }
-  //   );
-  // }
-
   return (
     <>
       <Meta />
@@ -123,9 +103,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <Sidebar.Logo />
 
           <Sidebar.Nav>
-            {menu.map(({ href, label, icon: Icon }) => (
+            {menu.map(({ href, label, icon: Icon, soon = false }) => (
               <Sidebar.MenuItem href={href} key={label}>
-                <Icon size={16} /> {label}
+                <Icon size={16} /> {label}{" "}
+                {soon && <Badge variant="outline">Em breve</Badge>}
               </Sidebar.MenuItem>
             ))}
           </Sidebar.Nav>
@@ -148,11 +129,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <CompanySwitcher />
 
               <Feedback />
-
-              <Button size="sm" className="flex gap-2">
-                <TrendingUp size={16} />
-                Upgrade
-              </Button>
 
               <UserDropdown />
             </Header.Menu>

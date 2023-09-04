@@ -6,7 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useId, useState, type ComponentProps } from "react";
+import { useId, type ComponentProps } from "react";
 
 type Option = {
   label: string;
@@ -18,6 +18,7 @@ export type SelectProps = {
   error?: string;
   placeholder: string;
   options: Option[];
+  optional?: boolean;
 } & ComponentProps<typeof SelectRoot>;
 
 const Select = ({
@@ -25,13 +26,21 @@ const Select = ({
   error,
   label,
   placeholder,
+  optional,
   ...props
 }: SelectProps) => {
   const id = useId();
 
   return (
     <div className="space-y-1">
-      {label && <Label htmlFor={id}>{label}</Label>}
+      {label && (
+        <Label htmlFor={id}>
+          {label}{" "}
+          {optional && (
+            <span className="text-xs text-gray-400">(opcional)</span>
+          )}
+        </Label>
+      )}
 
       <SelectRoot {...props}>
         <SelectTrigger

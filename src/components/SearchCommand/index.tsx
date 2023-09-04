@@ -19,11 +19,13 @@ import {
   Store,
   User,
 } from "lucide-react";
+import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 
 const SearchCommand = () => {
   const [open, setOpen] = useState(false);
   const [showNewCompanyDialog, setShowNewCompanyDialog] = useState(false);
+  const router = useRouter();
 
   const commands = useMemo(
     () => [
@@ -51,7 +53,9 @@ const SearchCommand = () => {
           {
             icon: User,
             label: "Novo cliente",
-            onClick: () => {},
+            onClick: () => {
+              void router.push("/app/clientes/novo");
+            },
           },
         ],
       },
@@ -68,7 +72,7 @@ const SearchCommand = () => {
         ],
       },
     ],
-    []
+    [router]
   );
 
   useEffect(() => {

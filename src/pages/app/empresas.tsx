@@ -2,7 +2,6 @@ import { columns } from "@/components/CompaniesTable/columns";
 import { CompaniesTable } from "@/components/CompaniesTable/data-table";
 import AppLayout from "@/components/layouts/AppLayout";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { api } from "@/utils/api";
 
 export default function Companies() {

@@ -1,18 +1,27 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/utils/cn";
 import * as React from "react";
 
 export type TextFieldProps = {
   label?: string;
   error?: string;
+  optional?: boolean;
 } & React.InputHTMLAttributes<HTMLInputElement>;
 
 const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
-  ({ error, label, ...props }, ref) => {
+  ({ error, label, optional, className, ...props }, ref) => {
     const id = React.useId();
     return (
-      <div className="space-y-1">
-        {label && <Label htmlFor={id}>{label}</Label>}
+      <div className={cn("space-y-1", className)}>
+        {label && (
+          <Label htmlFor={id}>
+            {label}{" "}
+            {optional && (
+              <span className="text-xs text-gray-400">(opcional)</span>
+            )}
+          </Label>
+        )}
         <Input
           {...props}
           id={id}

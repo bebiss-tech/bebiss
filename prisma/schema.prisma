@@ -162,8 +162,8 @@ model Client {
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
 
-  addressId String  @unique
-  address   Address @relation(fields: [addressId], references: [id])
+  addressId String?  @unique
+  address   Address? @relation(fields: [addressId], references: [id])
 
   @@index([companyId])
 }

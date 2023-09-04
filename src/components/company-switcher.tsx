@@ -69,8 +69,8 @@ export default function CompanySwitcher({ className }: CompanySwitcherProps) {
   React.useEffect(() => {
     if (isSuccess && data?.companies?.length) {
       setSelectedCompany({
-        label: data.companies[0]!.name,
-        value: data.companies[0]!.id,
+        label: data.companies.at(0)!.name,
+        value: data.companies.at(0)!.id,
       });
     }
   }, [isSuccess, data]);
