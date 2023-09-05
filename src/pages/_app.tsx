@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
+import CompanyProvider from "@/contexts/Company";
 import "@/styles/globals.css";
 import { api } from "@/utils/api";
 import { type Session } from "next-auth";
@@ -15,8 +16,10 @@ const MyApp: AppType<{ session: Session | null }> = ({
   return (
     <main className={`${inter.className} min-h-screen`}>
       <SessionProvider session={session}>
-        <Component {...pageProps} />
-        <Toaster />
+        <CompanyProvider>
+          <Component {...pageProps} />
+          <Toaster />
+        </CompanyProvider>
       </SessionProvider>
     </main>
   );
