@@ -57,12 +57,11 @@ export const clientsRouter = createTRPCRouter({
     .input(clientSchema)
     .mutation(async ({ ctx, input }) => {
       const { companyId, name, phone } = input;
-      console.log({ companyId });
       const {
         user: { role },
       } = ctx.session;
 
-      if (["ADMIN_COMPANY", "MEMBER_COMPANY"].includes(role!)) {
+      if (!["ADMIN_COMPANY", "MEMBER_COMPANY"].includes(role!)) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "You do not have permission to create a company",
@@ -75,7 +74,7 @@ export const clientsRouter = createTRPCRouter({
           phone,
           company: {
             connect: {
-              id: "499e1c52-efa8-4adc-a22c-202d75175091",
+              id: companyId,
             },
           },
         },

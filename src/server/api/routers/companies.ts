@@ -79,7 +79,7 @@ export const companiesRouter = createTRPCRouter({
       if (role !== "ADMIN_COMPANY") {
         throw new TRPCError({
           code: "UNAUTHORIZED",
-          message: "You do not have permission to create a company",
+          message: "Você não tem permissão para criar uma empresa",
         });
       }
 
@@ -107,7 +107,7 @@ export const companiesRouter = createTRPCRouter({
 
       return {
         status: 201,
-        message: "Company created successfully",
+        message: "Empresa criada com sucesso",
         result: company,
       };
     }),
@@ -120,7 +120,7 @@ export const companiesRouter = createTRPCRouter({
       if (role !== "ADMIN_COMPANY") {
         throw new TRPCError({
           code: "UNAUTHORIZED",
-          message: "You are not authorized to get companies",
+          message: "Você não está autorizado a contratar empresas",
         });
       }
 

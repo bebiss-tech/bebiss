@@ -3,13 +3,14 @@ import Select from "@/components/Select";
 import TextField from "@/components/TextField";
 import AppLayout from "@/components/layouts/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ToastAction } from "@/components/ui/toast";
-import { useToast } from "@/components/ui/use-toast";
 import { api } from "@/utils/api";
 import { cpfMask, dateMask, phoneMask } from "@/utils/masks";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { type Client } from "@prisma/client";
 import { ArrowLeft, BadgeInfo, Stars } from "lucide-react";
+import { useRouter } from "next/router";
 import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 const createClientSchema = z.object({
@@ -52,7 +53,7 @@ const createClientSchema = z.object({
 type Inputs = z.infer<typeof createClientSchema>;
 
 export default function NewClient() {
-  const { toast } = useToast();
+  const router = useRouter();
   const {
     control,
     register,
@@ -62,29 +63,39 @@ export default function NewClient() {
     resolver: zodResolver(createClientSchema),
   });
 
-  const { mutate: createClient, isLoading } =
+  const { isLoading, mutateAsync: createClient } =
     api.clients.createClient.useMutation();
 
   const onSubmit = handleSubmit((data) => {
-    createClient(
+    const toastId = toast.promise(
+      new Promise<Client>(async (resolve) => {
+        const client = await createClient({
+          ...data,
+          companyId: "499e1c52-efa8-4adc-a22c-202d75175091",
+        });
+
+        setTimeout(() => {
+          resolve(client.result);
+        }, 3000);
+      }),
       {
-        ...data,
-        companyId: "499e1c52-efa8-4adc-a22c-202d75175091",
-      },
-      {
-        onSuccess: () => {
-          toast({
-            title: `Cliente criada com sucesso!`,
-            description: `O cliente ${data.name} foi criado com sucesso!`,
-            action: (
-              <ToastAction
-                altText={`Criar agendamento para o cliente ${data.name}`}
-              >
-                Criar agendamento
-              </ToastAction>
-            ),
+        loading: "Adicionando cliente...",
+        success: ({ name, id }) => {
+          toast(`O cliente "${name}" foi adicionado com sucesso!`, {
+            id: toastId,
+            duration: 10000,
+            action: {
+              label: "Agendar",
+              onClick: () => {
+                void router.push(`/app/agendamentos/novo?client=${id}`);
+              },
+            },
           });
+
+          return `O cliente "${name}" foi adicionado com sucesso!`;
         },
+        error: "Erro ao criar cliente",
+        duration: 10000,
       }
     );
   });
@@ -275,21 +286,12 @@ export default function NewClient() {
 
             <Button
               className="mt-4"
-              type="button"
-              onClick={() =>
-                toast({
-                  duration: 3000,
-                  title: `Cliente adicionado!`,
-                  description: `O cliente Alan Gabriel foi criado com sucesso!`,
-                  action: (
-                    <ToastAction
-                      altText={`Criar agendamento para o cliente Alan Gabriel`}
-                    >
-                      Criar agendamento
-                    </ToastAction>
-                  ),
-                })
-              }
+              // type="button"
+              // onClick={() =>
+              //   toast("Cliente criado com sucesso!", {
+              //     description: "O cliente Alan Gabriel foi criado com sucesso!",
+              //   })
+              // }
             >
               {isLoading ? "Carregando..." : "Adicionar cliente"}
             </Button>
