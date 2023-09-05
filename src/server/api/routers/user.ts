@@ -37,7 +37,7 @@ export const usersRouter = createTRPCRouter({
           name,
           email,
           password: passwordHash,
-          onboardings: {
+          onboarding: {
             create: {
               step: "WELCOME",
             },

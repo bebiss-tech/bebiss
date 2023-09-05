@@ -4,8 +4,6 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { Button } from "@/components/ui/button";
 import Spinner from "@/components/ui/icons/spinner";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
@@ -14,7 +12,6 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { FcGoogle } from "react-icons/fc";
 import { z } from "zod";
-import Google from "../ui/icons/google";
 import { useToast } from "../ui/use-toast";
 
 type User = {

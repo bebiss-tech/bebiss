@@ -43,14 +43,14 @@ const clientSchema = z.object({
   }),
 });
 
-const paginationSchema = z.object({
-  page: z.number().min(1).optional(),
-  limit: z.number().min(1).max(100).optional(),
-});
+// const paginationSchema = z.object({
+//   page: z.number().min(1).optional(),
+//   limit: z.number().min(1).max(100).optional(),
+// });
 
-const editCompanySchema = clientSchema.extend({
-  id: z.string().uuid(),
-});
+// const editCompanySchema = clientSchema.extend({
+//   id: z.string().uuid(),
+// });
 
 export const clientsRouter = createTRPCRouter({
   createClient: protectedProcedure
@@ -59,7 +59,7 @@ export const clientsRouter = createTRPCRouter({
       const { companyId, name, phone } = input;
       console.log({ companyId });
       const {
-        user: { role, id: userId },
+        user: { role },
       } = ctx.session;
 
       if (["ADMIN_COMPANY", "MEMBER_COMPANY"].includes(role!)) {
