@@ -6,7 +6,6 @@ import SearchCommand from "@/components/SearchCommand";
 import { Sidebar } from "@/components/Sidebar";
 import UserDropdown from "@/components/UserDropdown";
 import Meta from "@/components/layouts/meta";
-import { Toaster } from "@/components/ui/toaster";
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 
@@ -91,8 +90,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
           {children}
         </div>
-
-        <Toaster />
       </div>
     </>
   );

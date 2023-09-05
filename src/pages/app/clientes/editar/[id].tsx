@@ -3,8 +3,6 @@ import Select from "@/components/Select";
 import TextField from "@/components/TextField";
 import AppLayout from "@/components/layouts/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ToastAction } from "@/components/ui/toast";
-import { useToast } from "@/components/ui/use-toast";
 import { api } from "@/utils/api";
 import { cpfMask, dateMask, phoneMask } from "@/utils/masks";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -52,7 +50,6 @@ const clientSchema = z.object({
 type Inputs = z.infer<typeof clientSchema>;
 
 export default function NewClient() {
-  const { toast } = useToast();
   const {
     control,
     register,
@@ -66,27 +63,10 @@ export default function NewClient() {
     api.clients.createClient.useMutation();
 
   const onSubmit = handleSubmit((data) => {
-    createClient(
-      {
-        ...data,
-        companyId: "499e1c52-efa8-4adc-a22c-202d75175091",
-      },
-      {
-        onSuccess: () => {
-          toast({
-            title: `Cliente criada com sucesso!`,
-            description: `O cliente ${data.name} foi criado com sucesso!`,
-            action: (
-              <ToastAction
-                altText={`Criar agendamento para o cliente ${data.name}`}
-              >
-                Criar agendamento
-              </ToastAction>
-            ),
-          });
-        },
-      }
-    );
+    createClient({
+      ...data,
+      companyId: "499e1c52-efa8-4adc-a22c-202d75175091",
+    });
   });
 
   return (
@@ -273,24 +253,7 @@ export default function NewClient() {
               <TextField label="Numero" optional />
             </div> */}
 
-            <Button
-              className="mt-4"
-              type="button"
-              onClick={() =>
-                toast({
-                  duration: 3000,
-                  title: `Cliente adicionado!`,
-                  description: `O cliente Alan Gabriel foi criado com sucesso!`,
-                  action: (
-                    <ToastAction
-                      altText={`Criar agendamento para o cliente Alan Gabriel`}
-                    >
-                      Criar agendamento
-                    </ToastAction>
-                  ),
-                })
-              }
-            >
+            <Button className="mt-4" type="button">
               {isLoading ? "Carregando..." : "Adicionar cliente"}
             </Button>
           </form>
