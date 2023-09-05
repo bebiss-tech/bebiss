@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { Button } from "@/components/ui/button";
-import Spinner from "@/components/ui/icons/spinner";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { api } from "@/utils/api";
 
 import { useToast } from "@/components/ui/use-toast";

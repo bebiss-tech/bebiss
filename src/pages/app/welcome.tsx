@@ -4,7 +4,6 @@ import QRCodeModal from "@/components/modals/qr-code-modal";
 import UpgradePlanModal from "@/components/modals/upgrade-plan-modal";
 import Intro from "@/components/welcome/Intro";
 import { AnimatePresence } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";

@@ -3,6 +3,7 @@ import axios from "axios";
 
 type LogParams = {
   type?: "new-subscription" | "log";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   message?: any;
 };
 

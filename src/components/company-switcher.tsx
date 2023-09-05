@@ -25,27 +25,9 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/utils/cn";
 
+import { useCompany } from "@/contexts/Company";
 import { getNameInitials } from "@/utils";
-import { api } from "@/utils/api";
 import NewCompanyModal from "./modals/new-company-modal";
-
-const groups = [
-  {
-    label: "Empresas",
-    companies: [
-      {
-        label: "Clinica Samambaia",
-        value: "8bd2524d",
-      },
-      {
-        label: "Clinica Águas Claras (SUL) - Av. das Castanheiras",
-        value: "d4625d1e",
-      },
-    ],
-  },
-];
-
-type Company = (typeof groups)[number]["companies"][number];
 
 type PopoverTriggerProps = React.ComponentPropsWithoutRef<
   typeof PopoverTrigger
@@ -54,26 +36,10 @@ type PopoverTriggerProps = React.ComponentPropsWithoutRef<
 type CompanySwitcherProps = PopoverTriggerProps;
 
 export default function CompanySwitcher({ className }: CompanySwitcherProps) {
-  const { data, isSuccess, isLoading } = api.companies.listCompanies.useQuery({
-    limit: 40,
-    page: 1,
-  });
+  const { companies, isLoading, company, setCompany } = useCompany();
 
   const [open, setOpen] = React.useState(false);
   const [showNewCompanyDialog, setShowNewCompanyDialog] = React.useState(false);
-  const [selectedCompany, setSelectedCompany] = React.useState<Company>({
-    label: "",
-    value: "",
-  });
-
-  React.useEffect(() => {
-    if (isSuccess && data?.companies?.length) {
-      setSelectedCompany({
-        label: data.companies.at(0)!.name,
-        value: data.companies.at(0)!.id,
-      });
-    }
-  }, [isSuccess, data]);
 
   if (isLoading) {
     return (
@@ -102,13 +68,13 @@ export default function CompanySwitcher({ className }: CompanySwitcherProps) {
             <Avatar className="mr-2 h-5 w-5">
               <AvatarImage
                 src={`https://avatar.vercel.sh/${getNameInitials(
-                  selectedCompany.label
+                  company.label
                 )}?size=16`}
-                alt={selectedCompany.label}
+                alt={company.label}
               />
               <AvatarFallback className="text-xs">SC</AvatarFallback>
             </Avatar>
-            <span className="truncate">{selectedCompany.label}</span>
+            <span className="truncate">{company.label}</span>
             <CaretSortIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
@@ -118,13 +84,13 @@ export default function CompanySwitcher({ className }: CompanySwitcherProps) {
               <CommandInput placeholder="Buscar empresas..." />
               <CommandEmpty>Nenhuma empresa encontrada.</CommandEmpty>
               <CommandGroup heading="Empresa">
-                {data?.companies.map(({ name, id }) => {
+                {companies?.companies.map(({ name, id }) => {
                   const initials = getNameInitials(name);
                   return (
                     <CommandItem
                       key={id}
                       onSelect={() => {
-                        setSelectedCompany({
+                        setCompany({
                           label: name,
                           value: id,
                         });
@@ -143,9 +109,7 @@ export default function CompanySwitcher({ className }: CompanySwitcherProps) {
                       <CheckIcon
                         className={cn(
                           "ml-auto h-4 w-4",
-                          selectedCompany.value === id
-                            ? "opacity-100"
-                            : "opacity-0"
+                          company.value === id ? "opacity-100" : "opacity-0"
                         )}
                       />
                     </CommandItem>
