@@ -3,7 +3,6 @@ import Select from "@/components/Select";
 import TextField from "@/components/TextField";
 import AppLayout from "@/components/layouts/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ToastAction } from "@/components/ui/toast";
 import { api } from "@/utils/api";
 import { cpfMask, dateMask, phoneMask } from "@/utils/masks";
 import { zodResolver } from "@hookform/resolvers/zod";
