@@ -3,8 +3,9 @@ import Select from "@/components/Select";
 import TextField from "@/components/TextField";
 import AppLayout from "@/components/layouts/AppLayout";
 import { Button } from "@/components/ui/button";
+import { useCompany } from "@/contexts/Company";
 import { api } from "@/utils/api";
-import { cpfMask, dateMask, phoneMask } from "@/utils/masks";
+import { cpfMask, dateMask, phoneMask, removeMask } from "@/utils/masks";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type Client } from "@prisma/client";
 import { ArrowLeft, BadgeInfo, Stars } from "lucide-react";
@@ -29,19 +30,44 @@ const createClientSchema = z.object({
     .string({
       required_error: "Telefone é obrigatório",
     })
-    .nonempty({ message: "Telefone é obrigatório" }),
-  secundaryPhone: z.string().optional(),
+    .nonempty({ message: "Telefone é obrigatório" })
+    .refine(
+      (phone) => {
+        return removeMask(phone).length === 11;
+      },
+      {
+        message: "Telefone inválido",
+      }
+    ),
+  secundaryPhone: z
+    .string()
+    .optional()
+    .refine(
+      (phone) => {
+        return removeMask(phone).length === 11;
+      },
+      {
+        message: "Telefone inválido",
+      }
+    ),
   email: z
     .string()
     .or(z.string().email({ message: "E-mail inválido" }))
     .optional(),
   cpf: z
     .string()
-    .length(11, {
-      message: "CPF deve ter 11 caracteres",
-    })
+    .refine(
+      (cpf) => {
+        if (!cpf) return true;
+
+        return removeMask(cpf).length === 11;
+      },
+      {
+        message: "CPF inválido",
+      }
+    )
     .optional(),
-  birthDate: z
+  birthday: z
     .string()
     .length(10, {
       message: "Data de nascimento inválida",
@@ -54,6 +80,7 @@ type Inputs = z.infer<typeof createClientSchema>;
 
 export default function NewClient() {
   const router = useRouter();
+  const { company } = useCompany();
   const {
     control,
     register,
@@ -71,12 +98,13 @@ export default function NewClient() {
       new Promise<Client>(async (resolve) => {
         const client = await createClient({
           ...data,
-          companyId: "499e1c52-efa8-4adc-a22c-202d75175091",
+          phone: removeMask(data.phone),
+          secundaryPhone: removeMask(data.secundaryPhone),
+          cpf: removeMask(data.cpf),
+          companyId: company.value,
         });
 
-        setTimeout(() => {
-          resolve(client.result);
-        }, 3000);
+        resolve(client.result);
       }),
       {
         loading: "Adicionando cliente...",
@@ -200,7 +228,7 @@ export default function NewClient() {
                 />
 
                 <Controller
-                  name="birthDate"
+                  name="birthday"
                   control={control}
                   render={({
                     field: { onChange, value },
