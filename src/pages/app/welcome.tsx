@@ -1,5 +1,6 @@
 import Meta from "@/components/layouts/meta";
 import NewCompanyModal from "@/components/modals/new-company-modal";
+import QRCodeConnectedSuccessModal from "@/components/modals/qr-code-connected-success-modal";
 import QRCodeModal from "@/components/modals/qr-code-modal";
 import UpgradePlanModal from "@/components/modals/upgrade-plan-modal";
 import Intro from "@/components/welcome/Intro";
@@ -14,6 +15,8 @@ export default function Welcome() {
   const [showUpgradePlanModal, setshowUpgradePlanModal] = useState(false);
   const [showNewCompanyDialog, setShowNewCompanyDialog] = useState(false);
   const [showQRCodeModal, setShowQRCodeModal] = useState(false);
+  const [showQRCodeConnectedSuccessModal, setShowQRCodeConnectedSuccessModal] =
+    useState(false);
 
   useEffect(() => {
     if (router.query.type === "company") {
@@ -30,6 +33,14 @@ export default function Welcome() {
       }, 200);
     } else {
       setShowQRCodeModal(false);
+    }
+
+    if (router.query.type === "whatsapp-connected") {
+      setTimeout(() => {
+        setShowQRCodeConnectedSuccessModal(true);
+      }, 200);
+    } else {
+      setShowQRCodeConnectedSuccessModal(false);
     }
 
     if (router.query.type === "upgrade") {
@@ -52,17 +63,29 @@ export default function Welcome() {
           onChangeVisibility={setShowNewCompanyDialog}
         />
 
-        <UpgradePlanModal
-          welcomeFlow
-          open={showUpgradePlanModal}
-          onChangeVisibility={setshowUpgradePlanModal}
-        />
+        {showUpgradePlanModal && (
+          <UpgradePlanModal
+            welcomeFlow
+            open={showUpgradePlanModal}
+            onChangeVisibility={setshowUpgradePlanModal}
+          />
+        )}
 
-        <QRCodeModal
-          welcomeFlow
-          open={showQRCodeModal}
-          onChangeVisibility={setShowQRCodeModal}
-        />
+        {showQRCodeModal && (
+          <QRCodeModal
+            welcomeFlow
+            open={showQRCodeModal}
+            onChangeVisibility={setShowQRCodeModal}
+          />
+        )}
+
+        {showQRCodeConnectedSuccessModal && (
+          <QRCodeConnectedSuccessModal
+            welcomeFlow
+            open={showQRCodeConnectedSuccessModal}
+            onChangeVisibility={setShowQRCodeConnectedSuccessModal}
+          />
+        )}
 
         <AnimatePresence mode="wait">
           {!router.query.type && <Intro key="intro" />}

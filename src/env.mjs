@@ -25,6 +25,8 @@ export const env = createEnv({
     RESEND_API_KEY: z.string(),
     DISCORD_LOG_WEBHOOK_URL: z.string(),
     DISCORD_SUBSCRIPTION_WEBHOOK_URL: z.string(),
+    HUST_BASE_URL: z.string().url(),
+    HUST_API_TOKEN: z.string(),
   },
 
   client: {
@@ -45,6 +47,8 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     DISCORD_LOG_WEBHOOK_URL: process.env.DISCORD_LOG_WEBHOOK_URL,
     DISCORD_SUBSCRIPTION_WEBHOOK_URL: process.env.DISCORD_SUBSCRIPTION_WEBHOOK_URL,
+    HUST_BASE_URL: process.env.HUST_BASE_URL,
+    HUST_API_TOKEN: process.env.HUST_API_TOKEN,
   },
 
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,

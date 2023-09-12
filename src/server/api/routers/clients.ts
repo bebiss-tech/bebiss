@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { removeMask } from "@/utils/masks";
 import { TRPCError } from "@trpc/server";
 import { parse } from "date-fns";
 import { z } from "zod";
@@ -20,17 +21,44 @@ const clientSchema = z.object({
     .string({
       required_error: "Telefone é obrigatório",
     })
-    .nonempty({ message: "Telefone é obrigatório" }),
-  secundaryPhone: z.string().optional(),
+    .nonempty({ message: "Telefone é obrigatório" })
+    .refine(
+      (phone) => {
+        return removeMask(phone).length === 11;
+      },
+      {
+        message: "Telefone inválido",
+      }
+    ),
+  secundaryPhone: z
+    .string()
+    .optional()
+    .refine(
+      (phone) => {
+        if (!phone) return true;
+
+        return removeMask(phone).length === 11;
+      },
+      {
+        message: "Telefone inválido",
+      }
+    ),
   email: z
     .string()
     .or(z.string().email({ message: "E-mail inválido" }))
     .optional(),
   cpf: z
     .string()
-    .length(11, {
-      message: "CPF deve ter 11 caracteres",
-    })
+    .refine(
+      (cpf) => {
+        if (!cpf) return true;
+
+        return removeMask(cpf).length === 11;
+      },
+      {
+        message: "CPF inválido",
+      }
+    )
     .optional(),
   birthday: z
     .string()
@@ -64,7 +92,7 @@ export const clientsRouter = createTRPCRouter({
 
       if (!["ADMIN_COMPANY", "MEMBER_COMPANY"].includes(role!)) {
         throw new TRPCError({
-          code: "UNAUTHORIZED",
+          code: "FORBIDDEN",
           message: "You do not have permission to create a company",
         });
       }
@@ -90,9 +118,16 @@ export const clientsRouter = createTRPCRouter({
         });
       }
 
+      if (company.plan !== "pro") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Você não tem permissão para criar um cliente",
+        });
+      }
+
       if (!company.users.find((user) => user.id === ctx.session.user.id)) {
         throw new TRPCError({
-          code: "UNAUTHORIZED",
+          code: "FORBIDDEN",
           message:
             "Você não tem permissão para criar um cliente para essa empresa",
         });

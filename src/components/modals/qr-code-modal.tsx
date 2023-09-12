@@ -5,11 +5,13 @@
 import { STAGGER_CHILD_VARIANTS } from "@/utils/animations";
 import { api } from "@/utils/api";
 import { motion } from "framer-motion";
-import { BadgeCheck, RotateCw } from "lucide-react";
+import { RotateCw } from "lucide-react";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+import { QRCode } from "react-qrcode-logo";
+
 import Confetti from "react-dom-confetti";
-import { Button } from "../ui/button";
 import MenuIcon from "../ui/icons/whatsapp/menu";
 import SettingsIcon from "../ui/icons/whatsapp/settings";
 import Modal from "./base-modal";
@@ -27,37 +29,110 @@ const QRCodeModal = ({
 }: QRCodeModalProps) => {
   const router = useRouter();
 
+  const interval = useRef<NodeJS.Timeout>();
+
   const [QRcodeExpire, setQRcodeExpire] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [QRCodeData, setQRCodeData] = useState("");
 
   const { mutate: changeStep } = api.onboarding.changeStep.useMutation();
+  const {
+    data,
+    isLoading,
+    isSuccess,
+    refetch: createWhatsAppConnectionrefetch,
+  } = api.hust.createWhatsAppConnection.useQuery(
+    {
+      companyId: router.query.id as string,
+    },
+    {
+      enabled: !!router.query.id && router.query.type === "whatsapp",
+    }
+  );
 
-  const handleFinishOnboarding = () => {
-    changeStep(
-      {
-        step: "COMPLETE_SETUP",
-        query: undefined,
+  const {
+    refetch,
+    data: checkStatus,
+    isSuccess: checkStatusIsSuccess,
+  } = api.hust.checkWhatsAppConnection.useQuery(
+    {
+      uuid: data?.uuid as string,
+    },
+    {
+      enabled: !!data?.uuid && router.query.type === "whatsapp",
+      onSuccess(data) {
+        if (!!data.QRCodeData) {
+          setQRCodeData(data.QRCodeData);
+          setQRcodeExpire(false);
+        }
+
+        if (data.status === "error") setQRcodeExpire(true);
+
+        if (data.status === "connected") {
+          setQRcodeExpire(false);
+
+          const query = {
+            type: "whatsapp-connected",
+            id: router.query.id as string,
+          };
+
+          changeStep(
+            {
+              step: "CONNECT_WHATSAPP_CONNECTED",
+              query,
+            },
+            {
+              onSuccess: () => {
+                setTimeout(() => {
+                  void router.push({
+                    pathname: "/app",
+                    query,
+                  });
+                }, 300);
+              },
+            }
+          );
+        }
       },
-      {
-        onSuccess: () => {
-          setTimeout(() => {
-            void router.push({
-              pathname: "/app",
-            });
-          }, 300);
-        },
-      }
-    );
-  };
+    }
+  );
+
+  let lastQRCodeHash: string;
 
   useEffect(() => {
-    if (!QRcodeExpire) {
-      setTimeout(() => {
-        // setQRcodeExpire(true);
-        setConnected(true);
-      }, 1000 * 5);
+    console.log("QRCodeModal useEffect");
+
+    if (isSuccess && checkStatusIsSuccess && checkStatus.status) {
+      interval.current = setInterval(async () => {
+        const { data: connection, isSuccess: connectionIsSuccess } =
+          await refetch();
+
+        if (!connectionIsSuccess) return;
+
+        if (connection.status === "connected") clearInterval(interval.current);
+
+        if (
+          !connection.status ||
+          !["qrcode", "configuring", "connected"].includes(
+            connection.status as string
+          )
+        ) {
+          clearInterval(interval.current);
+        }
+
+        if (connection.status === "qrcode") {
+          if (lastQRCodeHash === connection.QRCodehash) return;
+
+          // eslint-disable-next-line react-hooks/exhaustive-deps
+          lastQRCodeHash = connection.QRCodehash;
+        }
+      }, data?.updateFrequency || 2000);
     }
-  }, [QRcodeExpire]);
+
+    return () => {
+      clearInterval(interval.current);
+    };
+  }, [checkStatus?.status, checkStatusIsSuccess, data, isSuccess]);
 
   return (
     <Modal
@@ -128,11 +203,13 @@ const QRCodeModal = ({
                 variants={STAGGER_CHILD_VARIANTS}
                 className="flex-shrink-0"
               >
-                <div className="relative w-fit overflow-hidden">
+                <div className="relative w-fit min-w-[256px] overflow-hidden">
                   {QRcodeExpire && (
                     <div className="absolute inset-0 flex items-center justify-center bg-white/95">
                       <button
-                        onClick={() => setQRcodeExpire(false)}
+                        onClick={async () =>
+                          await createWhatsAppConnectionrefetch()
+                        }
                         className="flex h-60 w-60 flex-col items-center justify-center gap-3 rounded-full bg-[#71BBA8] p-4 text-white"
                       >
                         <RotateCw size={32} />
@@ -143,11 +220,17 @@ const QRCodeModal = ({
                     </div>
                   )}
 
-                  <img
+                  {/* <img
                     src="/images/QRCode.png"
                     alt="QR Code"
                     className="h-64 w-64"
-                  />
+                  /> */}
+
+                  {isLoading && <span>Buscando QRCode</span>}
+
+                  {checkStatusIsSuccess && QRCodeData && (
+                    <QRCode value={QRCodeData} size={256} fgColor="#1f2937" />
+                  )}
                 </div>
               </motion.div>
             </div>
@@ -160,23 +243,6 @@ const QRCodeModal = ({
             config={{ elementCount: 200, spread: 90 }}
           />
         </div>
-
-        {connected && (
-          <motion.div variants={STAGGER_CHILD_VARIANTS}>
-            <div className="mb-2 flex items-center gap-2">
-              <BadgeCheck size={32} className="text-emerald-500" />
-              <h3 className="text-lg font-medium">
-                WhatsApp conectado com sucesso
-              </h3>
-            </div>
-            <p className="mb-4 text-sm text-gray-500">
-              Agora você já pode começar a cadastrar agendamentos
-            </p>
-            <Button size="sm" onClick={handleFinishOnboarding}>
-              Acessar dashboard
-            </Button>
-          </motion.div>
-        )}
       </motion.div>
     </Modal>
   );

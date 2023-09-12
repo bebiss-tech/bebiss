@@ -5,6 +5,7 @@ import { brasilAPIRouter } from "./routers/brasil-api";
 import { onboardingRouter } from "./routers/onboarding";
 import { checkoutSessionRouter } from "./routers/create-checkout-session";
 import { clientsRouter } from "./routers/clients";
+import { hustAppRouter } from "./routers/hust";
 
 /**
  * This is the primary router for your server.
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   checkout: checkoutSessionRouter,
   onboarding: onboardingRouter,
   clients: clientsRouter,
+  hust: hustAppRouter,
 });
 
 // export type definition of API

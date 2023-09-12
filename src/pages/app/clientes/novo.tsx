@@ -8,6 +8,7 @@ import { api } from "@/utils/api";
 import { cpfMask, dateMask, phoneMask, removeMask } from "@/utils/masks";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type Client } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import { ArrowLeft, BadgeInfo, Stars } from "lucide-react";
 import { useRouter } from "next/router";
 import { Controller, useForm } from "react-hook-form";
@@ -44,6 +45,8 @@ const createClientSchema = z.object({
     .optional()
     .refine(
       (phone) => {
+        if (!phone) return true;
+
         return removeMask(phone).length === 11;
       },
       {
@@ -90,42 +93,59 @@ export default function NewClient() {
     resolver: zodResolver(createClientSchema),
   });
 
-  const { isLoading, mutateAsync: createClient } =
-    api.clients.createClient.useMutation();
+  const {
+    isLoading,
+    mutateAsync: createClient,
+    error,
+  } = api.clients.createClient.useMutation();
 
   const onSubmit = handleSubmit((data) => {
-    const toastId = toast.promise(
-      new Promise<Client>(async (resolve) => {
-        const client = await createClient({
-          ...data,
-          phone: removeMask(data.phone),
-          secundaryPhone: removeMask(data.secundaryPhone),
-          cpf: removeMask(data.cpf),
-          companyId: company.value,
-        });
+    try {
+      const toastId = toast.promise(
+        new Promise<Client>(async (resolve, reject) => {
+          try {
+            const client = await createClient({
+              ...data,
+              phone: removeMask(data.phone),
+              secundaryPhone: removeMask(data.secundaryPhone),
+              cpf: removeMask(data.cpf),
+              companyId: company.value,
+            });
 
-        resolve(client.result);
-      }),
-      {
-        loading: "Adicionando cliente...",
-        success: ({ name, id }) => {
-          toast(`O cliente "${name}" foi adicionado com sucesso!`, {
-            id: toastId,
-            duration: 10000,
-            action: {
-              label: "Agendar",
-              onClick: () => {
-                void router.push(`/app/agendamentos/novo?client=${id}`);
+            resolve(client.result);
+          } catch (err) {
+            if (err instanceof TRPCError) {
+              reject(err.shape.message || "Ocorreu um erro inesperado");
+              return;
+            }
+            reject("Ocorreu um erro inesperado");
+          }
+        }),
+        {
+          loading: "Adicionando cliente...",
+          success: ({ name, id }) => {
+            toast(`O cliente "${name}" foi adicionado com sucesso!`, {
+              id: toastId,
+              duration: 10000,
+              action: {
+                label: "Agendar",
+                onClick: () => {
+                  void router.push(`/app/agendamentos/novo?client=${id}`);
+                },
               },
-            },
-          });
+            });
 
-          return `O cliente "${name}" foi adicionado com sucesso!`;
-        },
-        error: "Erro ao criar cliente",
-        duration: 10000,
-      }
-    );
+            return `O cliente "${name}" foi adicionado com sucesso!`;
+          },
+          error: (err: string) => err,
+          duration: 10000,
+        }
+      );
+    } catch (err) {
+      console.log(err);
+      console.log("{errorrrrr}");
+      console.log(error);
+    }
   });
 
   return (
