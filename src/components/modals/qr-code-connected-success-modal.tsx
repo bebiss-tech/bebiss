@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { BadgeCheck } from "lucide-react";
 import { useRouter } from "next/router";
 
+import { useEffect, useState } from "react";
 import Confetti from "react-dom-confetti";
 import { Button } from "../ui/button";
 import Modal from "./base-modal";
@@ -24,6 +25,7 @@ const QRCodeConnectedSuccessModal = ({
   welcomeFlow,
 }: QRCodeConnectedSuccessModalProps) => {
   const router = useRouter();
+  const [confetti, setConfetti] = useState(false);
 
   const { mutate: changeStep } = api.onboarding.changeStep.useMutation();
 
@@ -45,6 +47,12 @@ const QRCodeConnectedSuccessModal = ({
     );
   };
 
+  useEffect(() => {
+    if (open) {
+      setConfetti(true);
+    }
+  }, [open]);
+
   return (
     <Modal
       showModal={open}
@@ -65,7 +73,10 @@ const QRCodeConnectedSuccessModal = ({
         animate="show"
       >
         <div className="flex justify-center">
-          <Confetti active={true} config={{ elementCount: 200, spread: 90 }} />
+          <Confetti
+            active={confetti}
+            config={{ elementCount: 200, spread: 90 }}
+          />
         </div>
 
         <motion.div variants={STAGGER_CHILD_VARIANTS}>

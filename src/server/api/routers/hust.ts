@@ -49,6 +49,13 @@ export const hustAppRouter = createTRPCRouter({
           id: companyId,
         },
         select: {
+          plan: true,
+          connection: {
+            select: {
+              uuid: true,
+              status: true,
+            },
+          },
           users: {
             select: {
               id: true,
@@ -77,14 +84,39 @@ export const hustAppRouter = createTRPCRouter({
         });
       }
 
-      // criar conexão com o whatsapp na hust
-      // salvar dados da conexão no banco de dados (criar tabela de connections)
+      // verificar se a empresa tem um plano ativo
+      if (company.plan !== "pro") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Faça upgrade para o plano PRO para conectar o WhatsApp",
+        });
+      }
+
+      // verificar se a empresa já tem uma conexão ativa
+      if (company.connection?.status === "connected") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Essa empresa já tem uma conexão ativa",
+        });
+      }
 
       try {
         const {
           data: { uuid, updateFrequency },
         } = await ctx.hustAPI.post<CreateConnectionResponse>("/connection", {
           type: "whatsapp",
+        });
+
+        await ctx.prisma.connection.create({
+          data: {
+            uuid,
+            status: "init",
+            company: {
+              connect: {
+                id: companyId,
+              },
+            },
+          },
         });
 
         const statusParams = {
@@ -95,11 +127,13 @@ export const hustAppRouter = createTRPCRouter({
         };
 
         const {
-          data: { status, QRCodeData, startDate, client, system, QRCodehash },
+          data: { status, QRCodeData, QRCodehash, ...rest },
         } = await ctx.hustAPI.get<StatusConnectionResponse>(
           "/connection/status",
           statusParams
         );
+
+        console.log("[STATUS]", JSON.stringify(rest, null, 2));
 
         return {
           uuid,
@@ -130,11 +164,32 @@ export const hustAppRouter = createTRPCRouter({
         };
 
         const {
-          data: { status, QRCodeData, startDate, client, system, QRCodehash },
+          data: { status, QRCodeData, QRCodehash },
         } = await ctx.hustAPI.get<StatusConnectionResponse>(
           "/connection/status",
           statusParams
         );
+
+        if (status === "connected") {
+          await ctx.prisma.connection.update({
+            where: {
+              uuid,
+            },
+            data: {
+              status: "connected",
+            },
+          });
+        }
+
+        if (status === "error") {
+          await ctx.prisma.connection.delete({
+            where: {
+              uuid,
+            },
+          });
+
+          console.log("[CONEXÃO DELETADA]: ", uuid);
+        }
 
         return {
           QRCodeData,
