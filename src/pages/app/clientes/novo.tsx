@@ -3,13 +3,16 @@ import Select from "@/components/Select";
 import TextField from "@/components/TextField";
 import AppLayout from "@/components/layouts/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ToastAction } from "@/components/ui/toast";
-import { useToast } from "@/components/ui/use-toast";
+import { useCompany } from "@/contexts/Company";
 import { api } from "@/utils/api";
-import { cpfMask, dateMask, phoneMask } from "@/utils/masks";
+import { cpfMask, dateMask, phoneMask, removeMask } from "@/utils/masks";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { type Client } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import { ArrowLeft, BadgeInfo, Stars } from "lucide-react";
+import { useRouter } from "next/router";
 import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 const createClientSchema = z.object({
@@ -28,19 +31,46 @@ const createClientSchema = z.object({
     .string({
       required_error: "Telefone é obrigatório",
     })
-    .nonempty({ message: "Telefone é obrigatório" }),
-  secundaryPhone: z.string().optional(),
+    .nonempty({ message: "Telefone é obrigatório" })
+    .refine(
+      (phone) => {
+        return removeMask(phone).length === 11;
+      },
+      {
+        message: "Telefone inválido",
+      }
+    ),
+  secundaryPhone: z
+    .string()
+    .optional()
+    .refine(
+      (phone) => {
+        if (!phone) return true;
+
+        return removeMask(phone).length === 11;
+      },
+      {
+        message: "Telefone inválido",
+      }
+    ),
   email: z
     .string()
     .or(z.string().email({ message: "E-mail inválido" }))
     .optional(),
   cpf: z
     .string()
-    .length(11, {
-      message: "CPF deve ter 11 caracteres",
-    })
+    .refine(
+      (cpf) => {
+        if (!cpf) return true;
+
+        return removeMask(cpf).length === 11;
+      },
+      {
+        message: "CPF inválido",
+      }
+    )
     .optional(),
-  birthDate: z
+  birthday: z
     .string()
     .length(10, {
       message: "Data de nascimento inválida",
@@ -52,7 +82,8 @@ const createClientSchema = z.object({
 type Inputs = z.infer<typeof createClientSchema>;
 
 export default function NewClient() {
-  const { toast } = useToast();
+  const router = useRouter();
+  const { company } = useCompany();
   const {
     control,
     register,
@@ -62,31 +93,59 @@ export default function NewClient() {
     resolver: zodResolver(createClientSchema),
   });
 
-  const { mutate: createClient, isLoading } =
-    api.clients.createClient.useMutation();
+  const {
+    isLoading,
+    mutateAsync: createClient,
+    error,
+  } = api.clients.createClient.useMutation();
 
   const onSubmit = handleSubmit((data) => {
-    createClient(
-      {
-        ...data,
-        companyId: "499e1c52-efa8-4adc-a22c-202d75175091",
-      },
-      {
-        onSuccess: () => {
-          toast({
-            title: `Cliente criada com sucesso!`,
-            description: `O cliente ${data.name} foi criado com sucesso!`,
-            action: (
-              <ToastAction
-                altText={`Criar agendamento para o cliente ${data.name}`}
-              >
-                Criar agendamento
-              </ToastAction>
-            ),
-          });
-        },
-      }
-    );
+    try {
+      const toastId = toast.promise(
+        new Promise<Client>(async (resolve, reject) => {
+          try {
+            const client = await createClient({
+              ...data,
+              phone: removeMask(data.phone),
+              secundaryPhone: removeMask(data.secundaryPhone),
+              cpf: removeMask(data.cpf),
+              companyId: company.value,
+            });
+
+            resolve(client.result);
+          } catch (err) {
+            if (err instanceof TRPCError) {
+              reject(err.shape.message || "Ocorreu um erro inesperado");
+              return;
+            }
+            reject("Ocorreu um erro inesperado");
+          }
+        }),
+        {
+          loading: "Adicionando cliente...",
+          success: ({ name, id }) => {
+            toast(`O cliente "${name}" foi adicionado com sucesso!`, {
+              id: toastId,
+              duration: 10000,
+              action: {
+                label: "Agendar",
+                onClick: () => {
+                  void router.push(`/app/agendamentos/novo?client=${id}`);
+                },
+              },
+            });
+
+            return `O cliente "${name}" foi adicionado com sucesso!`;
+          },
+          error: (err: string) => err,
+          duration: 10000,
+        }
+      );
+    } catch (err) {
+      console.log(err);
+      console.log("{errorrrrr}");
+      console.log(error);
+    }
   });
 
   return (
@@ -189,7 +248,7 @@ export default function NewClient() {
                 />
 
                 <Controller
-                  name="birthDate"
+                  name="birthday"
                   control={control}
                   render={({
                     field: { onChange, value },
@@ -275,21 +334,12 @@ export default function NewClient() {
 
             <Button
               className="mt-4"
-              type="button"
-              onClick={() =>
-                toast({
-                  duration: 3000,
-                  title: `Cliente adicionado!`,
-                  description: `O cliente Alan Gabriel foi criado com sucesso!`,
-                  action: (
-                    <ToastAction
-                      altText={`Criar agendamento para o cliente Alan Gabriel`}
-                    >
-                      Criar agendamento
-                    </ToastAction>
-                  ),
-                })
-              }
+              // type="button"
+              // onClick={() =>
+              //   toast("Cliente criado com sucesso!", {
+              //     description: "O cliente Alan Gabriel foi criado com sucesso!",
+              //   })
+              // }
             >
               {isLoading ? "Carregando..." : "Adicionar cliente"}
             </Button>

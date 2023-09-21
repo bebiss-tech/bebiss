@@ -7,7 +7,6 @@ import { Sidebar } from "@/components/Sidebar";
 import UserDropdown from "@/components/UserDropdown";
 import Meta from "@/components/layouts/meta";
 import { Button } from "@/components/ui/button";
-import { Toaster } from "@/components/ui/toaster";
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 import { FcGoogle } from "react-icons/fc";
@@ -85,8 +84,6 @@ export default function ProfessionalLayout({
 
           {children}
         </div>
-
-        <Toaster />
       </div>
     </>
   );

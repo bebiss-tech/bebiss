@@ -19,7 +19,6 @@ import UserDropdown from "@/components/UserDropdown";
 import CompanySwitcher from "@/components/company-switcher";
 import Meta from "@/components/layouts/meta";
 import { Badge } from "@/components/ui/badge";
-import { Toaster } from "@/components/ui/toaster";
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 
@@ -136,8 +135,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
           {children}
         </div>
-
-        <Toaster />
       </div>
     </>
   );

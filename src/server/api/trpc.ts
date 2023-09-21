@@ -15,6 +15,7 @@ import { ZodError } from "zod";
 import { getServerAuthSession } from "@/server/auth";
 import { prisma } from "@/server/db";
 import axios from "axios";
+import { hustAPI } from "@/lib/hust.api";
 
 /**
  * 1. CONTEXT
@@ -43,6 +44,7 @@ const createInnerTRPCContext = (opts: CreateContextOptions) => {
     session: opts.session,
     prisma,
     axios,
+    hustAPI,
   };
 };
 

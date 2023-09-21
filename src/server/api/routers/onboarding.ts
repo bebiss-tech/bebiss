@@ -10,6 +10,7 @@ const changeStep = z.object({
     "UPGRADE",
     "CONNECT_WHATSAPP",
     "CONNECT_CALENDAR",
+    "CONNECT_WHATSAPP_CONNECTED",
     "COMPLETE_SETUP",
   ]),
   query: z.record(z.string()).optional(),

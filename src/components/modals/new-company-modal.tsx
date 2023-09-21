@@ -1,12 +1,10 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { DialogFooter } from "@/components/ui/dialog";
-import { useToast } from "@/components/ui/use-toast";
-
 import Select from "@/components/Select";
 import TextField from "@/components/TextField";
+import { Button } from "@/components/ui/button";
+import { DialogFooter } from "@/components/ui/dialog";
 import { api } from "@/utils/api";
 import { brazilianStates } from "@/utils/brazilian-states";
 import { phoneMask, removeMask, zipcodeMask } from "@/utils/masks";
@@ -14,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 import Modal from "./base-modal";
 
@@ -77,7 +76,7 @@ const NewCompanyModal = ({
   welcomeFlow,
 }: NewCompanyModalProps) => {
   const router = useRouter();
-  const { toast } = useToast();
+
   const {
     register,
     handleSubmit,
@@ -119,9 +118,8 @@ const NewCompanyModal = ({
               query,
             });
 
-            toast({
-              title: `${name} criada com sucesso!`,
-              description: `Assine o plano PRO para ter acesso a todas as funcionalidades.`,
+            toast.message(`${name} criada com sucesso!`, {
+              description: `Assine o plano PRO para começar a criar agendamentos.`,
             });
 
             setTimeout(() => {
@@ -134,18 +132,14 @@ const NewCompanyModal = ({
             return;
           }
 
-          toast({
-            title: `${name} criada com sucesso!`,
-            description: `Agora você pode realizar agendamentos para a ${name}.`,
+          toast.message(`${name} criada com sucesso!`, {
+            description: `Assine o plano PRO para começar a criar agendamentos.`,
           });
 
           onClose();
         },
         onError: (error) => {
-          toast({
-            title: "Erro ao criar empresa.",
-            description: error.message,
-          });
+          toast.error(error.message);
         },
       }
     );

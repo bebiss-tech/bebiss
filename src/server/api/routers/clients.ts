@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { removeMask } from "@/utils/masks";
 import { TRPCError } from "@trpc/server";
+import { parse } from "date-fns";
 import { z } from "zod";
 
 const clientSchema = z.object({
@@ -19,19 +21,46 @@ const clientSchema = z.object({
     .string({
       required_error: "Telefone é obrigatório",
     })
-    .nonempty({ message: "Telefone é obrigatório" }),
-  secundaryPhone: z.string().optional(),
+    .nonempty({ message: "Telefone é obrigatório" })
+    .refine(
+      (phone) => {
+        return removeMask(phone).length === 11;
+      },
+      {
+        message: "Telefone inválido",
+      }
+    ),
+  secundaryPhone: z
+    .string()
+    .optional()
+    .refine(
+      (phone) => {
+        if (!phone) return true;
+
+        return removeMask(phone).length === 11;
+      },
+      {
+        message: "Telefone inválido",
+      }
+    ),
   email: z
     .string()
     .or(z.string().email({ message: "E-mail inválido" }))
     .optional(),
   cpf: z
     .string()
-    .length(11, {
-      message: "CPF deve ter 11 caracteres",
-    })
+    .refine(
+      (cpf) => {
+        if (!cpf) return true;
+
+        return removeMask(cpf).length === 11;
+      },
+      {
+        message: "CPF inválido",
+      }
+    )
     .optional(),
-  birthDate: z
+  birthday: z
     .string()
     .length(10, {
       message: "Data de nascimento inválida",
@@ -56,26 +85,61 @@ export const clientsRouter = createTRPCRouter({
   createClient: protectedProcedure
     .input(clientSchema)
     .mutation(async ({ ctx, input }) => {
-      const { companyId, name, phone } = input;
-      console.log({ companyId });
+      const { companyId, birthday, ...data } = input;
       const {
         user: { role },
       } = ctx.session;
 
-      if (["ADMIN_COMPANY", "MEMBER_COMPANY"].includes(role!)) {
+      if (!["ADMIN_COMPANY", "MEMBER_COMPANY"].includes(role!)) {
         throw new TRPCError({
-          code: "UNAUTHORIZED",
+          code: "FORBIDDEN",
           message: "You do not have permission to create a company",
+        });
+      }
+
+      const company = await ctx.prisma.company.findUnique({
+        where: {
+          id: companyId,
+        },
+        select: {
+          plan: true,
+          users: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      });
+
+      if (!company) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Empresa não encontrada",
+        });
+      }
+
+      if (company.plan !== "pro") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Você não tem permissão para criar um cliente",
+        });
+      }
+
+      if (!company.users.find((user) => user.id === ctx.session.user.id)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message:
+            "Você não tem permissão para criar um cliente para essa empresa",
         });
       }
 
       const client = await ctx.prisma.client.create({
         data: {
-          name,
-          phone,
+          ...data,
+          birthday: birthday ? parse(birthday, "dd/MM/yyyy", new Date()) : null,
           company: {
             connect: {
-              id: "499e1c52-efa8-4adc-a22c-202d75175091",
+              id: companyId,
             },
           },
         },
@@ -87,76 +151,4 @@ export const clientsRouter = createTRPCRouter({
         result: client,
       };
     }),
-  // listClients: protectedProcedure
-  //   .input(paginationSchema)
-  //   .query(async ({ ctx, input }) => {
-  //     const { page = 1, limit = 10 } = input;
-  //     const { id, role } = ctx.session.user;
-
-  //     if (role !== "ADMIN_COMPANY") {
-  //       throw new TRPCError({
-  //         code: "UNAUTHORIZED",
-  //         message: "You are not authorized to get companies",
-  //       });
-  //     }
-
-  //     const count = await ctx.prisma.client.count();
-
-  //     return {
-  //       clients: [],
-  //       count,
-  //       totalPages: Math.ceil(count / limit),
-  //       limit,
-  //     };
-  //   }),
-  // getClientById: protectedProcedure
-  //   .input(
-  //     z.object({
-  //       id: z.string().uuid(),
-  //     })
-  //   )
-  //   .query(async ({ ctx, input: { id: companyId } }) => {
-  //     const { id: userId, role } = ctx.session.user;
-
-  //     if (role !== "ADMIN_COMPANY") {
-  //       throw new TRPCError({
-  //         code: "UNAUTHORIZED",
-  //         message: "You are not authorized to get companies",
-  //       });
-  //     }
-
-  //     const clinet = null;
-
-  //     if (!clinet) {
-  //       throw new TRPCError({
-  //         code: "NOT_FOUND",
-  //         message: "Client not found",
-  //       });
-  //     }
-
-  //     return {};
-  //   }),
-  // editClient: protectedProcedure
-  //   .input(editCompanySchema)
-  //   .mutation(async ({ ctx, input }) => {
-  //     const { id } = input;
-  //     const {
-  //       user: { role, id: userId },
-  //     } = ctx.session;
-
-  //     if (role !== "ADMIN_COMPANY") {
-  //       throw new TRPCError({
-  //         code: "UNAUTHORIZED",
-  //         message: "You do not have permission to create a company",
-  //       });
-  //     }
-
-  //     // company update where id, and user id
-
-  //     return {
-  //       status: 200,
-  //       message: "Client updated successfully",
-  //       result: {},
-  //     };
-  //   }),
 });

@@ -108,6 +108,7 @@ model Company {
   appointments Appointment[]
   templates    Template[]
   users        User[]
+  connection   Connection?
 
   stripeCustomerId     String? @unique // Stripe subscription ID
   stripeSubscriptionId String? @unique // Stripe subscription ID
@@ -120,6 +121,27 @@ model Company {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum ConnectionStatusEnum {
+  init
+  connected
+  disconnected
+}
+
+model Connection {
+  id     String               @id @default(uuid())
+  uuid   String               @unique
+  number String?
+  status ConnectionStatusEnum @default(init)
+
+  companyId String  @unique
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
 }
 
 model Service {
@@ -256,6 +278,7 @@ enum OnboardingSteps {
   CREATE_COMPANY
   UPGRADE
   CONNECT_WHATSAPP
+  CONNECT_WHATSAPP_CONNECTED
 
   // MEMBER_COMPANY steps
 
